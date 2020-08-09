@@ -59,7 +59,10 @@ cd /home/pi
 compiled=-1
 
 # Compile if a new version is available, if it's the first time the code is compiled or if last compile was unsuccessfull
-cat >> /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt
+if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt" ]; then
+	touch /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt
+	echo "1" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt
+fi
 if [ "$cloned" -eq 1 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt`" -ne "0" ]; then
 	arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
 	echo "$?" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt
@@ -67,7 +70,10 @@ if [ "$cloned" -eq 1 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull
 fi
 
 # Upload if a new version is available, if it's the first time the code is uploaded or if last upload was unsuccessfull
-cat >> /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUplad.txt
+if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt" ]; then
+        touch /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt
+        echo "1" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt
+fi
 if [ "$compiled" -eq 0 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt`" -ne "0" ]; then
 	arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
 	echo "$?" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt

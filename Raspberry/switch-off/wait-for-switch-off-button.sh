@@ -17,9 +17,10 @@
 
 # From http://stackoverflow.com/questions/3173131
 
+set -x
+
 # Make a copy of last log into log.old
-cat > /home/pi/Printy-McPrintface/Raspberry/switch-off/log.old.txt
-echo "`cat /home/pi/Printy-McPrintface/Raspberry/switch-off/log.txt`" > /home/pi/Printy-McPrintface/Raspberry/switch-off/log.old.txt
+mv /home/pi/Printy-McPrintface/Raspberry/switch-off/log.txt /home/pi/Printy-McPrintface/Raspberry/switch-off/log.old.txt
 
 # Redirect stdout to a named pipe running tee replacing log file
 exec > >(tee /home/pi/Printy-McPrintface/Raspberry/switch-off/log.txt)
