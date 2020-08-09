@@ -64,7 +64,7 @@ if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt" ]; th
 	echo "1" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt
 fi
 if [ "$cloned" -eq 1 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt`" -ne "0" ]; then
-	arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
+	/home/pi/bin/arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
 	echo "$?" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastCompile.txt
 	compiled=$?
 fi
@@ -75,6 +75,6 @@ if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt" ]; the
         echo "1" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt
 fi
 if [ "$compiled" -eq 0 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt`" -ne "0" ]; then
-	arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
+	/home/pi/bin/arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
 	echo "$?" > /home/pi/Printy-McPrintface/Raspberry/git-pull/lastUpload.txt
 fi
