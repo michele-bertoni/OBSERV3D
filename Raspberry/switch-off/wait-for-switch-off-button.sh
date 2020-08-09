@@ -17,13 +17,17 @@
 
 # From http://stackoverflow.com/questions/3173131
 
-# Redirect stdout to a named pipe running tee with append
-#!exec > >(tee -a /home/pi/Printy-McPrintface/Raspberry/switch-off/log.txt)
+# Make a copy of last log into log.old
+cat > /home/pi/Printy-McPrintface/Raspberry/switch-off/log.old.txt
+echo "`cat /home/pi/Printy-McPrintface/Raspberry/switch-off/log.txt`" > /home/pi/Printy-McPrintface/Raspberry/switch-off/log.old.txt
+
+# Redirect stdout to a named pipe running tee replacing log file
+exec > >(tee /home/pi/Printy-McPrintface/Raspberry/switch-off/log.txt)
 
 # Redirect stderr to stdout
 exec 2>&1
 
-#!echo Reboot at `date` - waiting... 
+echo Reboot at `date` - waiting... 
 
 # Execute inline python code
 sudo python - <<END
@@ -35,7 +39,7 @@ gpio.setmode(gpio.BCM)
 # enable pullups
 # physical pin 5 - short with physical pin 6 (gnd) to reboot)
 gpio.setup(3, gpio.IN, pull_up_down=gpio.PUD_UP)
-#!print "Python: Waiting for 2 second button press..."
+print "Python: Waiting for 2 second button press..."
 # Code adapted from
 # http://raspberrypi.stackexchange.com/questions/13866/
 buttonReleased = True
@@ -49,8 +53,8 @@ while buttonReleased:
             buttonReleased = True
             break
 gpio.cleanup()
-#!print "Python: Button pressed"
+print "Python: Button pressed"
 END
 
-#!echo Done waiting at `date`. Shutting down system...
+echo Done waiting at `date`. Shutting down system...
 sudo shutdown 0
