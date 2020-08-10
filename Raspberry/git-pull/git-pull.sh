@@ -100,8 +100,8 @@ if [ "$compiled" -eq 0 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pu
 	touch /home/pi/Printy-McPrintface/Raspberry/git-pull/.updating
 	while [ -f "/home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen" ] && [ "$sleepTime" -lt 60 ]
 	do
-		sleep 0.1
-		sleepTime=$(($sleepTime+0.1))
+		sleep 1
+		sleepTime=$(($sleepTime+1))
 	done
 	/home/pi/bin/arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
 	echo "$?" > /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload
