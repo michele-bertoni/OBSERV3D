@@ -17,29 +17,34 @@ exec > >(tee /home/pi/Printy-McPrintface/Raspberry/controller-ino/log.txt)
 # Redirect stderr to stdout
 exec 2>&1
 
-# Verbose mode
-set -x
-
 # Reset possibly leftover locks
 rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 
 # Main loop
-while [ "1" -eq "1" ]
-do
+updated=0
+while [[ "1" -eq "1" ]]; do
 	if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]; then
+		if [ "$updated" -ne 0 ]; then
+			if [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload`" -eq "0" ]; then
+				echo "Code uploaded successfully."
+			else
+				echo "Upload failed."
+			fi
+		fi
 		touch /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
+		echo "Running Python code..."
 		# Run Python code
 		# TODO
 		#
 		# The following code simulates the actual code:
-		while [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]
-		do
-			echo "I'm using Arduino serial"
+		while [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]; do
 			sleep 1
 		done
 		# End of the simulated code
 		#
 		rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
+		echo "Updating Arduino..."
+		updated=1
 	fi
 	sleep 1
 done
