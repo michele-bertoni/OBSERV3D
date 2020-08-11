@@ -40,6 +40,16 @@ do
 	fi
 done
 
+# Initialize cache files
+if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile" ]; then
+        touch /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile
+        echo "2" > /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile
+fi
+if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload" ]; then
+        touch /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload
+        echo "2" > /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload
+fi
+
 # Go to home directory
 cd /home/pi
 
@@ -66,11 +76,14 @@ do
 		if [[ "$pull" =~ "up to date" ]]; then
 			echo No changes
 			cloned=-1
-		# Otherwise if some files changed
+		elif [[ "$pull" =~ "Arduino/" ]]; then
+                        echo Arduino source code changed
+                        cloned=1
+		# Otherwise if some non-Arduino files changed
 		else
-			echo Updated
-			cloned=1
-	fi
+			echo Updated non-Arduino files
+			cloned=-2
+		fi
 	# Otherwise retry
 	else
 		sleep 2
@@ -86,10 +99,6 @@ cd /home/pi
 compiled=-1
 
 # Compile if a new version is available, if it's the first time the code is compiled or if last compile was unsuccessfull
-if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile" ]; then
-	touch /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile
-	echo "2" > /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile
-fi
 if [ "$cloned" -eq 1 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile`" -ne "0" ]; then
 	echo "3" > /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastCompile
 	/home/pi/bin/arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old Printy-McPrintface/Arduino/printy.ino
@@ -98,10 +107,6 @@ if [ "$cloned" -eq 1 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull
 fi
 
 # Upload if a new version is available, if it's the first time the code is uploaded or if last upload was unsuccessfull
-if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload" ]; then
-        touch /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload
-        echo "2" > /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload
-fi
 if [ "$compiled" -eq 0 ] || [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload`" -ne "0" ]; then
 	echo "3" > /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload
 	sleepTime=0
