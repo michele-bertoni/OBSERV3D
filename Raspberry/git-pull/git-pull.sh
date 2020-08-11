@@ -76,7 +76,7 @@ do
 		if [[ "$pull" =~ "up to date" ]]; then
 			echo No changes
 			cloned=-1
-		elif [[ "$pull" =~ "Arduino/" ]]; then
+		elif [[ "$pull" =~ "Arduino/printy.ino/" ]]; then
                         echo Arduino source code changed
                         cloned=1
 		# Otherwise if some non-Arduino files changed
