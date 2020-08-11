@@ -18,7 +18,6 @@
 mv /home/pi/Printy-McPrintface/Raspberry/git-pull/log.txt /home/pi/Printy-McPrintface/Raspberry/git-pull/log.old.txt
 
 # All output goes to stdout and log file1
-#
 # Redirect stdout to a named pipe running tee with append
 exec > >(tee /home/pi/Printy-McPrintface/Raspberry/git-pull/log.txt)
 
