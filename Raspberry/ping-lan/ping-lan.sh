@@ -35,6 +35,6 @@ sleep 20
 ping -c 10 192.168.1.1
 
 # If none of the pings was successfull, reboot
-if $?
+if $? then
   sudo reboot
 fi
