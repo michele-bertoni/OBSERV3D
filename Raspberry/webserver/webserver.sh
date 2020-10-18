@@ -28,6 +28,12 @@ exec 2>&1
 # Verbose mode
 set -x
 
+# Wait 20 second for net to be established
+sleep 20
+
+# Print ifconfig
+sudo ifconfig
+
 # Go to Videos directory
 cd /home/pi/Videos
 sudo python3 -m http.server 80
