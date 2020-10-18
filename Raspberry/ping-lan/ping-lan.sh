@@ -12,15 +12,15 @@
 #
 # This script is added to crontab (with crontab -e) as follows:
 #
-# @reboot /home/pi/Printy-McPrintface/Raspberry/webserver/webserver.sh
+# @reboot /home/pi/Printy-McPrintface/Raspberry/ping-lan/ping-lan.sh
 #
 # Move last log to log.old
-mv /home/pi/Printy-McPrintface/Raspberry/webserver/log.txt /home/pi/Printy-McPrintface/Raspberry/webserver/log.old.txt
+mv /home/pi/Printy-McPrintface/Raspberry/ping-lan/log.txt /home/pi/Printy-McPrintface/Raspberry/ping-lan/log.old.txt
 
 # All output goes to stdout and log file1
 #
 # Redirect stdout to a named pipe running tee with append
-exec > >(tee /home/pi/Printy-McPrintface/Raspberry/webserver/log.txt)
+exec > >(tee /home/pi/Printy-McPrintface/Raspberry/ping-lan/log.txt)
 
 # Redirect stderr to stdout
 exec 2>&1
@@ -28,15 +28,13 @@ exec 2>&1
 # Verbose mode
 set -x
 
-# Print date and time
-date +"Date : %d/%m/%Y Time : %H.%M.%S"
-
-# Wait 20 second for net to be established
+# Wait 20 seconds
 sleep 20
 
-# Print ifconfig
-sudo ifconfig
+# Ping 10 times an always on device
+ping -c 10 192.168.1.1
 
-# Go to Videos directory
-cd /home/pi/Videos
-sudo python3 -m http.server 80
+# If none of the pings was successfull, reboot
+if $?
+  sudo reboot
+fi
