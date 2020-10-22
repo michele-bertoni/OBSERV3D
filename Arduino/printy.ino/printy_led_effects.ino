@@ -41,8 +41,10 @@ void LedEffects::handleLeds() {
   uint8_t time = millis()>>_LEDS_TIME_SHIFT;
   if(time-lastUpdateTime >= _LEDS_UPDATE_TIME) {
     lastUpdateTime = time;
-    fill_solid(chLeds, NUM_CHLEDS, CHSV(ledManager.getHue(), ledManager.getSaturation(), ledManager.getBrightness()));
-    fill_solid(extLeds, NUM_EXTLEDS, CHSV(ledManager.getExtHue(), ledManager.getExtSaturation(), ledManager.getExtBrightness()));
+    //fill_solid(chLeds, NUM_CHLEDS, CHSV(ledManager.getHue(), ledManager.getSaturation(), ledManager.getBrightness()));
+    //fill_solid(extLeds, NUM_EXTLEDS, CHSV(ledManager.getExtHue(), ledManager.getExtSaturation(), ledManager.getExtBrightness()));
+    fill_solid(chLeds, NUM_CHLEDS, CHSV(0, 0, 255);
+    fill_solid(extLeds, NUM_EXTLEDS, CHSV(0, 0, 128);
     FastLED.show();
   }
 }
