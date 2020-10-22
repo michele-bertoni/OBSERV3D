@@ -8,34 +8,47 @@
 
 #include "printy_printer_status.h"
 
-PrinterStatus::PrinterStatus(uint8_t powerButtonPin)
-  : powerButtonPin(powerButtonPin)
+PrinterStatus::PrinterStatus(uint8_t powerButtonPin, uint8_t v5Pin, uint8_t v12Pin, uint8_t v24Pin, uint8_t powerSwitchPin, uint8_t raspiStatusPin, uint8_t raspiSwitchPin)
+  : powerButtonPin(powerButtonPin),
+    powerStatus(v5Pin, v12Pin, v24Pin, powerSwitchPin),
+    raspiStatus(raspiStatusPin, raspiSwitchPin)
 {
+  loadSettings();
   pinMode(powerButtonPin, INPUT_PULLUP);
 }
 
 void PrinterStatus::checkPowerStatus() {
   uint8_t time = millis()>>_STATUS_TIME_SHIFT;
+  
   if(checkPowerButton(time) || ((scheduledPowerOff || scheduledReboot) && isSafeToSwitch(newPrinterStatus) && isSafeToSwitch(printerStatus))) {
+    /* if the printer is on and it might switch off */
     if(printerStatus != STATUS_O) {
       setNewPrinterStatus(STATUS_D);
       scheduledPowerOff = false;
-      communication.write(OUT_SHUTDOWN);
-      switchPhase = 0;
-      lastSwitchPhaseTime = time;
+      powerStatus.setScheduledOn(false);
+      raspiStatus.setScheduledOn(keepRaspberryOn);
     }
+    /* if the printer is off and it might switch on */
     else if(!scheduledPowerOff){
       setNewPrinterStatus(STATUS_U);
       scheduledReboot = false;
-      switchPhase = 0;
-      lastSwitchPhaseTime = time;
+      powerStatus.setScheduledOn(true);
+      raspiStatus.setScheduledOn(true);
     }
   }
-  if(newPrinterStatus == STATUS_D) {
-    handleShutDown(time);
+  
+  powerStatus.handlePowerStatus();
+  raspiStatus.handleRaspiStatus();
+
+  if(printerStatus != STATUS_O && powerStatus.isOff()) {
+    raspiStatus.setScheduledOn(keepRaspberryOn);
+    if(keepRaspberryOn || raspiStatus.isOff()) {
+      setNewPrinterStatus(STATUS_O);
+    }
   }
-  else if(newPrinterStatus == STATUS_U) {
-    handleBootUp(time);
+  else if(printerStatus == STATUS_O && !powerStatus.isOff()) {
+    setNewPrinterStatus(STATUS_U);
+    raspiStatus.setScheduledOn(true);
   }
 }
 
@@ -55,11 +68,13 @@ bool PrinterStatus::checkPowerButton(uint8_t time) {
 }
 
 void PrinterStatus::setNewPrinterStatus(uint8_t status) {
-  lastSwitchPhaseTime = millis();
   if(hasNewStatus()) {
     switchToNewPrinterStatus();
   }
   newPrinterStatus = status;
+
+  //TODO: move the following line into effect manager
+  switchToNewPrinterStatus();
 }
 
 uint8_t PrinterStatus::getPrinterStatus() {
@@ -82,6 +97,13 @@ void PrinterStatus::switchToNewPrinterStatus() {
   printerStatus = newPrinterStatus;
 }
 
+void PrinterStatus::setKeepRaspberryOn(bool keepOn) {
+  keepRaspberryOn = keepOn;
+  if(printerStatus == STATUS_O) {
+    raspiStatus.setScheduledOn(keepRaspberryOn);
+  }
+}
+
 bool PrinterStatus::hasNewStatus() {
   return newPrinterStatus != printerStatus;
 }
@@ -94,14 +116,24 @@ void PrinterStatus::scheduleReboot(bool isScheduled) {
   scheduledReboot = isScheduled;
 }
 
-void PrinterStatus::handleShutDown(uint8_t time) {
-  switch(switchPhase) {
-    case 0: break;
+void PrinterStatus::storeSettings() {
+  EEPROM.update(_STATUS_FIRST_EEPROM_ADDR, _STATUS_LAST_EEPROM_ADDR-_STATUS_FIRST_EEPROM_ADDR);
+  EEPROM.update(_STATUS_FIRST_EEPROM_ADDR+1, keepRaspberryOn);
+}
+
+void PrinterStatus::loadSettings() {
+uint8_t storedBytes = EEPROM.read(_STATUS_FIRST_EEPROM_ADDR);
+  switch(storedBytes) {
+    case 1: setKeepRaspberryOn(EEPROM.read(_STATUS_FIRST_EEPROM_ADDR+1));
+    default: resetSettings(); 
+  }
+  if(storedBytes != _STATUS_LAST_EEPROM_ADDR-_STATUS_FIRST_EEPROM_ADDR) {
+    storeSettings();
   }
 }
 
-void PrinterStatus::handleBootUp(uint8_t time) {
-  switch(switchPhase) {
-    case 0: break;
+void PrinterStatus::resetSettings(uint8_t startingPosition=0) {
+  switch(startingPosition) {
+    case 0: setKeepRaspberryOn(false);
   }
 }

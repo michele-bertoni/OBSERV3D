@@ -9,6 +9,10 @@
 #ifndef PRINTY_PRINTER_STATUS_H
 #define PRINTY_PRINTER_STATUS_H
 
+#include "EEPROM.h"
+#include "printy_raspi_status.h"
+#include "printy_power_status.h"
+
 #define STATUS_O  0     //Off
 #define STATUS_U  1     //Booting up
 #define STATUS_D  2     //Shutting down
@@ -29,25 +33,32 @@
 #define _TIME_LONGPRESS (5120>>_STATUS_TIME_SHIFT)
 #define _TIME_SHORTPRESS (256>>_STATUS_TIME_SHIFT)
 
+#define _STATUS_FIRST_EEPROM_ADDR 100
+#define _STATUS_LAST_EEPROM_ADDR 101
+
 class PrinterStatus {
   private: 
-    uint8_t printerStatus, newPrinterStatus, switchPhase;
+    PowerStatus powerStatus; 
+    RaspiStatus raspiStatus;
+    uint8_t printerStatus, newPrinterStatus;
     bool scheduledPowerOff, scheduledReboot;
-    uint8_t lastPBUnpressedTime, lastSwitchPhaseTime;
+    uint8_t lastPBUnpressedTime;
     bool wasButtonPressed;
+    bool keepRaspberryOn;
     const uint8_t powerButtonPin;
     bool isSafeToSwitch(uint8_t status), isSafeToForceSwitch(uint8_t status); 
     bool checkPowerButton(uint8_t time);
-    void handleShutDown(uint8_t time), handleBootUp(uint8_t time);
 
   public: 
-    PrinterStatus(uint8_t powerButtonPin);
+    PrinterStatus(uint8_t powerButtonPin, uint8_t v5Pin, uint8_t v12Pin, uint8_t v24Pin, uint8_t powerSwitchPin, uint8_t raspiStatusPin, uint8_t raspiSwitchPin);
     void checkPowerStatus(); 
     void setNewPrinterStatus(uint8_t status);
     void switchToNewPrinterStatus();
+    void setKeepRaspberryOn(bool keepOn);
     bool hasNewStatus();
     uint8_t getPrinterStatus(), getNewPrinterStatus();
     void schedulePowerOff(bool isScheduled), scheduleReboot(bool isScheduled);
+    void storeSettings(), loadSettings(), resetSettings(uint8_t startingPosition=0);
     uint8_t x, z, y, te, tc, tb, dte, dtc, dtb; 
 };
 

@@ -11,8 +11,6 @@
 
 #define _COMM_DEBUG 0
 
-#define OUT_SHUTDOWN 'D'
-
 class Communication {
   private: 
     uint8_t awaitingData;

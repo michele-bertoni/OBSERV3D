@@ -20,17 +20,20 @@ void LedManager::setExtruderLedsOn(bool ledsOn) {
   extruderLedsOn = ledsOn;
 }
 
+void LedManager::setEditExtruderHSV(bool editExtruderHSV) {
+  isEditExtruderHSV = editExtruderHSV;
+}
+
 void LedManager::setHue(uint8_t value) {
-  hue = value;
+  isEditExtruderHSV ? extHue=value : hue=value;
 }
 
 void LedManager::setSaturation(uint8_t value) { 
-  saturation = value;
+  isEditExtruderHSV ? extSaturation=value : saturation=value;
 }
 
 void LedManager::setBrightness(uint8_t value) {
-  brightness = value;
-  FastLED.setBrightness(brightness);
+  isEditExtruderHSV ? extBrightness=value : brightness=value;
 }
 
 void LedManager::setEffectMode(uint8_t mode) {
@@ -41,36 +44,12 @@ void LedManager::setFadingMode(uint8_t mode) {
   fadingMode = mode;
 }
 
-void LedManager::setExtruderMode(uint8_t mode) {
-  extruderMode = mode;
-}
-
 void LedManager::setEffectDuration(uint8_t duration) {
   effectDuration = duration;
 }
 
 void LedManager::setFadingDuration(uint8_t duration) {
   fadingDuration = duration;
-}
-
-void LedManager::setRandomHue(bool state) {
-  isRandomHue = state;
-}
-
-void LedManager::setRandomEffectMode(bool state) {
-  isRandomEffectMode = state;
-}
-
-void LedManager::setRandomFadingMode(bool state) {
-  isRandomFadingMode = state;
-}
-
-void LedManager::setRandomEffectDuration(bool state) {
-  isRandomEffectDuration = state;
-}
-
-void LedManager::setRandomFadingDuration(bool state) {
-  isRandomFadingDuration = state;
 }
 
 bool LedManager::getChamberLedsOn() {
@@ -81,9 +60,11 @@ bool LedManager::getExtruderLedsOn() {
   return extruderLedsOn;
 }
 
+bool LedManager::getEditExtruderHSV() {
+  return isEditExtruderHSV;
+}
+
 uint8_t LedManager::getHue() {
-  if(isRandomHue)
-    return random8();
   return hue;
 }
 
@@ -95,88 +76,88 @@ uint8_t LedManager::getBrightness() {
   return brightness;
 }
 
+uint8_t LedManager::getExtHue() {
+  return extHue;
+}
+
+uint8_t LedManager::getExtSaturation() {
+  return extSaturation;
+}
+
+uint8_t LedManager::getExtBrightness() {
+  return extBrightness;
+}
+
 uint8_t LedManager::getEffectMode() {
-  if(isRandomEffectMode)
-    return random8(28);
   return effectMode;
 }
 
 uint8_t LedManager::getFadingMode() {
-  if(isRandomFadingMode)
-    return random8(32);
   return fadingMode;
 }
 
 uint8_t LedManager::getEffectDuration() {
-  if(isRandomEffectDuration)
-    return random8(1, 41);
   return effectDuration;
 }
 
 uint8_t LedManager::getFadingDuration() {
-  if(isRandomFadingDuration)
-    return random8(8);
   return fadingDuration;
 }
 
 void LedManager::storeSettings() {
-  return;
-  EEPROM.update(_STARTING_EEPROM_ADDR, 1);
-  EEPROM.update(_STARTING_EEPROM_ADDR+1, chamberLedsOn);
-  EEPROM.update(_STARTING_EEPROM_ADDR+2, extruderLedsOn);
-  EEPROM.update(_STARTING_EEPROM_ADDR+3, hue);
-  EEPROM.update(_STARTING_EEPROM_ADDR+4, saturation);
-  EEPROM.update(_STARTING_EEPROM_ADDR+5, brightness);
-  EEPROM.update(_STARTING_EEPROM_ADDR+6, effectMode);
-  EEPROM.update(_STARTING_EEPROM_ADDR+7, fadingMode);
-  EEPROM.update(_STARTING_EEPROM_ADDR+8, effectDuration);
-  EEPROM.update(_STARTING_EEPROM_ADDR+9, fadingDuration);
-  EEPROM.update(_STARTING_EEPROM_ADDR+10, isRandomHue);
-  EEPROM.update(_STARTING_EEPROM_ADDR+11, isRandomEffectMode);
-  EEPROM.update(_STARTING_EEPROM_ADDR+12, isRandomFadingMode);
-  EEPROM.update(_STARTING_EEPROM_ADDR+13, isRandomEffectDuration);
-  EEPROM.update(_STARTING_EEPROM_ADDR+14, isRandomFadingDuration);
-  EEPROM.update(_STARTING_EEPROM_ADDR+15, extruderMode);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR, _LED_LAST_EEPROM_ADDR-_LED_FIRST_EEPROM_ADDR);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+1, chamberLedsOn);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+2, extruderLedsOn);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+3, hue);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+4, saturation);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+5, brightness);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+6, effectMode);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+7, fadingMode);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+8, effectDuration);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+9, fadingDuration);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+10, extHue);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+11, extSaturation);
+  EEPROM.update(_LED_FIRST_EEPROM_ADDR+12, extBrightness);
 }
 
 void LedManager::loadSettings() {
-  if(EEPROM.read(_STARTING_EEPROM_ADDR) == 1) {
-    setChamberLedsOn(EEPROM.read(_STARTING_EEPROM_ADDR+1));
-    setExtruderLedsOn(EEPROM.read(_STARTING_EEPROM_ADDR+2));
-    setHue(EEPROM.read(_STARTING_EEPROM_ADDR+3));
-    setSaturation(EEPROM.read(_STARTING_EEPROM_ADDR+4));
-    setBrightness(EEPROM.read(_STARTING_EEPROM_ADDR+5));
-    setEffectMode(EEPROM.read(_STARTING_EEPROM_ADDR+6)); 
-    setFadingMode(EEPROM.read(_STARTING_EEPROM_ADDR+7));
-    setEffectDuration(EEPROM.read(_STARTING_EEPROM_ADDR+8)); 
-    setFadingDuration(EEPROM.read(_STARTING_EEPROM_ADDR+9));
-    setRandomHue(EEPROM.read(_STARTING_EEPROM_ADDR+10)); 
-    setRandomEffectMode(EEPROM.read(_STARTING_EEPROM_ADDR+11)); 
-    setRandomFadingMode(EEPROM.read(_STARTING_EEPROM_ADDR+12)); 
-    setRandomEffectDuration(EEPROM.read(_STARTING_EEPROM_ADDR+13)); 
-    setRandomFadingDuration(EEPROM.read(_STARTING_EEPROM_ADDR+14));
-    setExtruderMode(EEPROM.read(_STARTING_EEPROM_ADDR+15));
+  uint8_t storedBytes = EEPROM.read(_LED_FIRST_EEPROM_ADDR);
+  isEditExtruderHSV = false;
+  switch(storedBytes) {
+    case 12: extBrightness = EEPROM.read(_LED_FIRST_EEPROM_ADDR+12); 
+    case 11: extSaturation = EEPROM.read(_LED_FIRST_EEPROM_ADDR+11); 
+    case 10: extHue = EEPROM.read(_LED_FIRST_EEPROM_ADDR+10);
+    case 9:  setFadingDuration(EEPROM.read(_LED_FIRST_EEPROM_ADDR+9));
+    case 8:  setEffectDuration(EEPROM.read(_LED_FIRST_EEPROM_ADDR+8)); 
+    case 7:  setFadingMode(EEPROM.read(_LED_FIRST_EEPROM_ADDR+7));
+    case 6:  setEffectMode(EEPROM.read(_LED_FIRST_EEPROM_ADDR+6)); 
+    case 5:  brightness = EEPROM.read(_LED_FIRST_EEPROM_ADDR+5);
+    case 4:  saturation = EEPROM.read(_LED_FIRST_EEPROM_ADDR+4);
+    case 3:  hue = EEPROM.read(_LED_FIRST_EEPROM_ADDR+3);
+    case 2:  setExtruderLedsOn(EEPROM.read(_LED_FIRST_EEPROM_ADDR+2)>0);
+    case 1:  setChamberLedsOn(EEPROM.read(_LED_FIRST_EEPROM_ADDR+1)>0);
+             resetSettings(storedBytes);
+             break;
+    default: resetSettings(); 
   }
-  else {
-    resetSettings();
+  if(storedBytes != _LED_LAST_EEPROM_ADDR-_LED_FIRST_EEPROM_ADDR) {
     storeSettings();
   }
 }
 
-void LedManager::resetSettings() {
-  setChamberLedsOn(true);
-  setExtruderLedsOn(true);
-  setHue(0);
-  setSaturation(0);
-  setBrightness(64);
-  setEffectMode(0); 
-  setFadingMode(0);
-  setEffectDuration(20); 
-  setFadingDuration(4);
-  setRandomHue(true); 
-  setRandomEffectMode(true); 
-  setRandomFadingMode(true); 
-  setRandomEffectDuration(false); 
-  setRandomFadingDuration(false);
-  setExtruderMode(0);
+void LedManager::resetSettings(uint8_t startingPosition=0) {
+  switch(startingPosition) {
+    case 0:  setChamberLedsOn(true);
+    case 1:  setExtruderLedsOn(true);
+    case 2:  hue = 0;
+    case 3:  saturation = 0;
+    case 4:  brightness = 128;
+    case 5:  setEffectMode(0); 
+    case 6:  setFadingMode(0);
+    case 7:  setEffectDuration(20); 
+    case 8:  setFadingDuration(4);
+    case 9:  extHue = 0; 
+    case 10: extSaturation = 0;
+    case 11: extBrightness = 64;
+  }
 }

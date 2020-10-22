@@ -40,69 +40,47 @@ uint8_t Communication::handleMessage(byte message) {
     Serial.print(message);
     Serial.print("\t");
   #endif
-  if(message >= 0b10000000) {   //1xxxxxxx
-    if(message >= 0b11000000) {   //11xxxxxx
-      if(message >= 0b11100000) {   //111xxxxx
+  if(message >= 0b10000000) {   //1xxxxxxx  [128, 255]
+    if(message >= 0b11000000) {   //11xxxxxx  [192, 255]
+      if(message >= 0b11100000) {   //111xxxxx  [224, 255]
         ledManager.setFadingMode(message & 0b00011111);
         #if _COMM_DEBUG
           Serial.print("fadingMode: ");
           Serial.print(message & 0b00011111);
         #endif
       }
-      else {                        //110xxxxx
-        if(message >= 0b11010000) {   //1101xxxx
-          if(message >= 0b11011100) {   //11011100 -> 11011111
-            if(message >= 0b11011110) {   //1101111x
-              ledManager.setRandomFadingDuration(message & 0b00000001);
-              #if _COMM_DEBUG
-                Serial.print("isRandomFadingDuration: ");
-                Serial.print(message & 0b00000001);
-              #endif
-            }
-            else {                        //11011110x
-              ledManager.setRandomEffectDuration(message & 0b00000001);
-              #if _COMM_DEBUG
-                Serial.print("isRandomEffectDuration: ");
-                Serial.print(message & 0b00000001);
-              #endif
-            }
+      else {                        //110xxxxx  [192, 223]
+        if(message >= 0b11010000) {   //1101xxxx  [208, 223]
+          if(message >= 0b11011000) {   //11011xxx  [216, 223]
+            #if _COMM_DEBUG
+              Serial.print("Undefined");
+            #endif
           }
-          else {                        //11010000 -> 11011011                       
-            if(message >= 0b11011000) {   //110110xx
-              if(message >= 0b11011010) {   //1101101x
-                ledManager.setRandomFadingMode(message & 0b00000001);
-                #if _COMM_DEBUG
-                  Serial.print("isRandomFadingMode: ");
-                  Serial.print(message & 0b00000001);
-                #endif
-              }
-              else {                        //1101100x
-                ledManager.setRandomEffectMode(message & 0b00000001);
-                #if _COMM_DEBUG
-                  Serial.print("isRandomEffectMode: ");
-                  Serial.print(message & 0b00000001);
-                #endif
-              }
+          else {                        //11010xxx  [208, 215]                       
+            if(message >= 11010100) {     //110101xx  [212, 215]
+              #if _COMM_DEBUG
+                Serial.print("Undefined");
+              #endif 
             }
-            else {                        //11010xxx 
-              if(message >= 0b11010110) {   //1101011x
-                ledManager.setRandomHue(message & 0b00000001);
+            else {                        //110100xx  [208, 211] 
+              if(message >= 0b11010110) {   //1101001x  [210, 211]
+                ledManager.setEditExtruderHSV(message & 0b00000001);
                 #if _COMM_DEBUG
-                  Serial.print("isRandomHue: ");
+                  Serial.print("editExtruderHSV: ");
                   Serial.print(message & 0b00000001);
                 #endif
               }
-              else if(message >= 0b11010010) { //11010010 -> 11010101
-                ledManager.setExtruderMode(message & 0b00000011);
+              else {                        //1101000x  [208, 209]
+                printerStatus.setKeepRaspberryOn(message & 0b00000001);
                 #if _COMM_DEBUG
-                  Serial.print("extruderMode: ");
-                  Serial.print(message & 0b00000011);
+                  Serial.print("keepRaspberryOn: ");
+                  Serial.print(message & 0b00000001);
                 #endif
               }
             }
           }
         }
-        else {                        //1100xxxx
+        else {                        //1100xxxx  [192, 207]
           ledManager.setSaturation ((message & 0b00001111)*17);
           #if _COMM_DEBUG
             Serial.print("saturation: ");
@@ -111,33 +89,33 @@ uint8_t Communication::handleMessage(byte message) {
         }
       }
     }
-    else {                        //10xxxxxx
-      if(message >= 0b10100000) {   //101xxxxx
+    else {                        //10xxxxxx  [128, 191]
+      if(message >= 0b10100000) {   //101xxxxx  [160, 191]
         ledManager.setEffectDuration(message >= 0b10110000 ? (message-171)<<2 : (message-159));
         #if _COMM_DEBUG
           Serial.print("effectDuration: ");
           Serial.print(message >= 0b10110000 ? (message-171)<<2 : (message-159));
         #endif    
       }
-      else {                        //100xxxxx
-        if(message >= 0b10010000) {   //1001xxxx
-          if(message >= 0b10011000) {   //10011xxx
+      else {                        //100xxxxx  [128, 159]
+        if(message >= 0b10010000) {   //1001xxxx  [144, 159]
+          if(message >= 0b10011000) {   //10011xxx  [152, 159]
             ledManager.setFadingDuration(message & 0b00000111);
             #if _COMM_DEBUG
               Serial.print("fadingDuration: ");
               Serial.print(message & 0b00000111);
             #endif   
           }
-          else {                         //10010xxx
-            if(message >= 0b10010100) {    //100101xx
-              if(message >= 0b10010110) {    //1001011x
+          else {                        //10010xxx  [144, 151]
+            if(message >= 0b10010100) {   //100101xx  [148, 151]
+              if(message >= 0b10010110) {   //1001011x  [150, 151]
                 printerStatus.schedulePowerOff(message & 0b00000001);
                 printerStatus.scheduleReboot(false);
                 #if _COMM_DEBUG
                   Serial.print(message & 0b00000001 ? "Schedule shutdown" : "Unschedule shutdown");
                 #endif
               }
-              else {                         //1001011x
+              else {                        //1001011x  [148, 149]
                 printerStatus.scheduleReboot(message & 0b00000001);
                 printerStatus.schedulePowerOff(message & 0b00000001);
                 #if _COMM_DEBUG
@@ -145,34 +123,42 @@ uint8_t Communication::handleMessage(byte message) {
                 #endif
               }
             }
-            else {                            //100100xx
-              if(message >= 0b10010010) {       //1001001x
-                if(message >= 0b10010011) {       //10010011
-                  
+            else {                        //100100xx  [144, 147]
+              if(message >= 0b10010010) {   //1001001x  [146, 147]
+                if(message >= 0b10010011) {   //10010011  147
+                  ledManager.storeSettings();
+                  printerStatus.storeSettings();
                   #if _COMM_DEBUG
                     Serial.print("Stored current settings");
                   #endif
                 }
-                else {                            //10010010
-
+                else {                        //10010010  146
+                  ledManager.loadSettings();
+                  printerStatus.loadSettings();
                   #if _COMM_DEBUG
                     Serial.print("Loaded stored settings");
                   #endif
                 }
               }
-              else {                            //1001000x
-                if(message >= 0b10010001) {       //10010001
-
+              else {                        //1001000x  [144, 145]
+                if(message >= 0b10010001) {   //10010001  145
+                  ledManager.resetSettings();
+                  printerStatus.resetSettings();
                   #if _COMM_DEBUG
                     Serial.print("Loaded default settings");
                   #endif
+                }
+                else {                        //10010000  144
+                  #if _COMM_DEBUG
+                    Serial.print("Undefined");
+                  #endif 
                 }
               }
             }
           }
         }
-        else {                        //1000xxxx
-          if(message <= 0b10001001) {   //10000000 -> 10001001
+        else {                        //1000xxxx  [128, 143]
+          if(message <= 0b10001001) {   //10000000 -> 10001001  [128, 137]
             #if _COMM_DEBUG
               Serial.print("Printer status: ");
               Serial.print((message & 0b00001111)+3);
@@ -185,43 +171,48 @@ uint8_t Communication::handleMessage(byte message) {
               printerStatus.setNewPrinterStatus((message & 0b00001111)+3);
             }
           }
+          else {                        //10001010 -> 10001111  [138, 143]
+            #if _COMM_DEBUG
+              Serial.print("Undefined");
+            #endif 
+          }
         }
       }
     }
   }
-  else {                        //0xxxxxxx
-    if(message >= 0b01000000) {   //01xxxxxx
+  else {                        //0xxxxxxx  [0, 127]
+    if(message >= 0b01000000) {   //01xxxxxx  [64, 127]
       ledManager.setHue((message & 0b00111111)<<2);
       #if _COMM_DEBUG
         Serial.print("hue: ");
         Serial.print((message & 0b00111111)<<2);
       #endif
     }
-    else {                        //00xxxxxx
-      if(message >= 0b00100000) {   //001xxxxx
+    else {                        //00xxxxxx  [0, 63]
+      if(message >= 0b00100000) {   //001xxxxx  [32, 63]
         ledManager.setBrightness(((message & 0b00011111)<<3)+7);
         #if _COMM_DEBUG
           Serial.print("brightness: ");
           Serial.print(((message & 0b00011111)<<3)+7);
         #endif
       }
-      else {                        //000xxxxx
-        if(message >= 0b00000100) {   //00000100 -> 00011111
+      else {                        //000xxxxx  [0, 31]
+        if(message >= 0b00000100) {   //00000100 -> 00011111  [4, 31]
           ledManager.setEffectMode(message-4);
           #if _COMM_DEBUG
             Serial.print("effectMode: ");
             Serial.print(message-4);
           #endif
         }
-        else {                        //000000xx
-          if(message >= 0b00000010) {   //0000001x
+        else {                        //000000xx  [0, 3]
+          if(message >= 0b00000010) {   //0000001x  [2, 3]
             ledManager.setExtruderLedsOn(message & 0b00000001);
             #if _COMM_DEBUG
               Serial.print("extruderLedsOn: ");
               Serial.print(message & 0b00000001);
             #endif
           }
-          else {                        //0000000x
+          else {                        //0000000x  [0, 1]
             ledManager.setChamberLedsOn(message);
             #if _COMM_DEBUG
               Serial.print("ledsOn: ");
@@ -300,20 +291,20 @@ void Communication::handleExtraData() {
 }
 
 /*
-  00000000  0 lights off
-  00000001  1 lights on
+  00000000  0   chamber lights off
+  00000001  1   chamber lights on
   ------------------------------------------------------------------------------------------------------------
-  00000010  2 extruder lights off
-  00000011  3 extruder lights on
+  00000010  2   extruder lights off
+  00000011  3   extruder lights on
   ------------------------------------------------------------------------------------------------------------
-  00000100  4 lights mode 0
-  000xxxxx  n lights mode n-4
+  00000100  4   lights mode 0
+  000xxxxx  n   lights mode n-4
   00011111  31  lights mode 27
   ------------------------------------------------------------------------------------------------------------
-  00100000  32  global brightness 7
-  00100001  33  global brightness 15
-  001xxxxx  n   global brightness (n-32)*8+7
-  00111111  63  global brightness 255
+  00100000  32  brightness 7
+  00100001  33  brightness 15
+  001xxxxx  n   brightness (n-32)*8+7
+  00111111  63  brightness 255
   ------------------------------------------------------------------------------------------------------------
   01000000  64  hue 0
   01000001  65  hue 4
@@ -365,22 +356,15 @@ void Communication::handleExtraData() {
   1000xxxx  n   Saturation (n-192)*17
   11001111  207 Saturation 255
   ------------------------------------------------------------------------------------------------------------  
-  11010000  208 Undefined
-  11010001  209 Undefined
-  11010010  210 Extruder leds as chamber                  2
-  11010011  211 Extruder leds complementary to chamber    3
-  11010100  212 Extruder leds white                       0
-  11010101  213 Extruder leds random hue                  1
-  11010110  214 Disable random hue color: hsv (rand, 255, 255); last color will be kept until next change
-  11010111  215 Enable random hue color: hsv (rand, 255, 255); color changes every fading
-  11011000  216 Disable random effect mode; last effect mode will be kept until next change
-  11011001  217 Enable random effect mode; effect mode changes after every fading
-  11011010  218 Disable random fading mode; last fading mode will be kept until next change
-  11011011  219 Enable random fading mode; fading mode changes after every fading
-  11011100  220 Disable random effect duration; last effect duration will be kept until next change
-  11011101  221 Enable random effect duration; effect duration changes every fading
-  11011110  222 Disable random fading duration; last fading duration will be kept until next change
-  11011111  223 Enable random fading duration; fading duration changes every fading
+  11010000  208 Switch off Raspberry when the printer is off
+  11010001  209 Keep the Raspberry always on
+  ------------------------------------------------------------------------------------------------------------
+  11010010  210 Following commands will edit chamber HSV color
+  11010011  211 Following commands will edit extruder HSV color
+  ------------------------------------------------------------------------------------------------------------
+  110101xx  n   Undefined
+  ------------------------------------------------------------------------------------------------------------
+  11011xxx  n   Undefined
   ------------------------------------------------------------------------------------------------------------
   11100000  224 Fading mode 0
   111xxxxx  n   Fading mode n-224

@@ -6,35 +6,36 @@
  * or on the website of CreativeCommons (https://creativecommons.org/licenses/by-nc-sa/3.0/)       *
  ***************************************************************************************************/
 
-#ifndef PRINTY_LED_SETTINGS_H
-#define PRINTY_LED_SETTINGS_H
+#ifndef PRINTY_LED_MANAGER_H
+#define PRINTY_LED_MANAGER_H
 
 #include "EEPROM.h"
+#include "FastLED.h"
 
-#define _STARTING_EEPROM_ADDR 0
+#define _LED_FIRST_EEPROM_ADDR 0
+#define _LED_LAST_EEPROM_ADDR 12
 
 class LedManager {
-  private:
-    bool chamberLedsOn, extruderLedsOn;
-    uint8_t hue, saturation, brightness;
-    uint8_t effectMode, fadingMode, extruderMode;
-    uint8_t effectDuration, fadingDuration;
-    bool isRandomHue, isRandomEffectMode, isRandomFadingMode; 
-    bool isRandomEffectDuration, isRandomFadingDuration;
   public:
     LedManager();
     void setChamberLedsOn(bool ledsOn), setExtruderLedsOn(bool ledsOn);
+    void setEditExtruderHSV(bool editExtruderHSV);
     void setHue(uint8_t value), setSaturation(uint8_t value), setBrightness(uint8_t value);
     void setEffectMode(uint8_t mode), setFadingMode(uint8_t mode), setExtruderMode(uint8_t value);
     void setEffectDuration(uint8_t duration), setFadingDuration(uint8_t duration);
-    void setRandomHue(bool state), setRandomEffectMode(bool state), setRandomFadingMode(bool state); 
-    void setRandomEffectDuration(bool state), setRandomFadingDuration(bool state);
-    bool getChamberLedsOn(), getExtruderLedsOn();
+    bool getChamberLedsOn(), getExtruderLedsOn(), getEditExtruderHSV();
     uint8_t getHue(), getSaturation(), getBrightness();
+    uint8_t getExtHue(), getExtSaturation(), getExtBrightness();
     uint8_t getEffectMode(), getFadingMode();
     uint8_t getEffectDuration(), getFadingDuration();
-    bool getExtruderLedsRandom(), getExtruderLedsWhite(), getExtruderLedsAsChamber(), getExtruderLedsComplementary();
-    void storeSettings(), loadSettings(), resetSettings();
+    void storeSettings(), loadSettings(), resetSettings(uint8_t startingPosition=0);
+    
+  private:
+    bool chamberLedsOn, extruderLedsOn, isEditExtruderHSV;
+    uint8_t hue, saturation, brightness;
+    uint8_t extHue, extSaturation, extBrightness;
+    uint8_t effectMode, fadingMode;
+    uint8_t effectDuration, fadingDuration;
 };
 
 #endif

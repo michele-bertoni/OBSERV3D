@@ -9,16 +9,19 @@
 #include "printy.h"
 
 LedManager ledManager;
-PrinterStatus printerStatus(PIN_POWERBUTTON);
+LedEffects ledEffects;
+PrinterStatus printerStatus(PIN_POWER_BUTTON, PIN_5V, PIN_12V, PIN_24V, PIN_POWER_SWITCH, PIN_RASPI_STATUS, PIN_RASPI_SWITCH);
 Communication communication;
 
 void setup() {
   // put your setup code here, to run once:
   communication.setup(BAUDRATE);
+  //TODO: ledEffects.setup();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   communication.read();
   printerStatus.checkPowerStatus();
+  ledEffects.handleLeds();
 }
