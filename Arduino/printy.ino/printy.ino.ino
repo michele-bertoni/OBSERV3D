@@ -16,7 +16,7 @@ Communication communication;
 void setup() {
   // put your setup code here, to run once:
   communication.setup(BAUDRATE);
-  //TODO: ledEffects.setup();
+  ledEffects.setup();
 }
 
 void loop() {
