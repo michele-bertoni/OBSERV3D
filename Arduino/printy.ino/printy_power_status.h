@@ -59,8 +59,8 @@
  * Multiplier to obtain uint8_t 8*actual_voltage from the 10-bit value read by analogRead()
  */
 #define _TO_5V (_5V_DIVIDER*_V_CONV)
-#define _TO_12V (_5V_DIVIDER*_V_CONV)
-#define _TO_24V (_5V_DIVIDER*_V_CONV)
+#define _TO_12V (_12V_DIVIDER*_V_CONV)
+#define _TO_24V (_24V_DIVIDER*_V_CONV)
 
 /**
  * Class for asynchronously managing the status of the power strip; 

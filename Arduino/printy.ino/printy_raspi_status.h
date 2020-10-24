@@ -15,7 +15,7 @@
 #define _RASPI_TIME_SHIFT 8                             //discard the first n less significant bits
 #define _RASPI_TIME_SHORTPRESS (512>>_RASPI_TIME_SHIFT) //raspiSwitchPin will go to ground for 512ms
 #define _RASPI_TIME_LONGPRESS (2304>>_RASPI_TIME_SHIFT) //raspiSwitchPin will go to ground for 2304ms
-#define _RASPI_TIME_WAIT (29952>>_RASPI_TIME_SHIFT)     //check if Raspberry is on every 29.952s
+#define _RASPI_TIME_WAIT (4608>>_RASPI_TIME_SHIFT)     //check if Raspberry is on every 4.608s
 
 /**
  * Possible status of Raspberry Pi

@@ -15,6 +15,8 @@ PrinterStatus::PrinterStatus(uint8_t powerButtonPin, uint8_t v5Pin, uint8_t v12P
 {
   loadSettings();
   pinMode(powerButtonPin, INPUT_PULLUP);
+  printerStatus = STATUS_O;
+  
 }
 
 void PrinterStatus::checkPowerStatus() {
@@ -61,6 +63,9 @@ bool PrinterStatus::checkPowerButton(uint8_t time) {
     if((time-lastPBUnpressedTime>=_TIME_LONGPRESS && isSafeToForceSwitch(newPrinterStatus) && isSafeToForceSwitch(printerStatus)) || 
        (time-lastPBUnpressedTime>=_TIME_SHORTPRESS && isSafeToSwitch(newPrinterStatus) && isSafeToSwitch(printerStatus))) {
       wasButtonPressed = true;
+      #if _STATUS_DEBUG
+        Serial.println("bDown");
+      #endif
       return true;
     }
   }
@@ -73,6 +78,10 @@ void PrinterStatus::setNewPrinterStatus(uint8_t status) {
   }
   newPrinterStatus = status;
 
+  #if _STATUS_DEBUG
+    Serial.print("new status ");
+    Serial.println(status);
+  #endif
   //TODO: move the following line into effect manager
   switchToNewPrinterStatus();
 }
@@ -95,6 +104,10 @@ bool PrinterStatus::isSafeToForceSwitch(uint8_t status) {
 
 void PrinterStatus::switchToNewPrinterStatus() {
   printerStatus = newPrinterStatus;
+  #if _STATUS_DEBUG
+    Serial.print("status ");
+    Serial.println(printerStatus);
+  #endif
 }
 
 void PrinterStatus::setKeepRaspberryOn(bool keepOn) {
@@ -124,7 +137,7 @@ void PrinterStatus::storeSettings() {
 void PrinterStatus::loadSettings() {
 uint8_t storedBytes = EEPROM.read(_STATUS_FIRST_EEPROM_ADDR);
   switch(storedBytes) {
-    case 1: setKeepRaspberryOn(EEPROM.read(_STATUS_FIRST_EEPROM_ADDR+1));
+    case 1: keepRaspberryOn = EEPROM.read(_STATUS_FIRST_EEPROM_ADDR+1);
     default: resetSettings(); 
   }
   if(storedBytes != _STATUS_LAST_EEPROM_ADDR-_STATUS_FIRST_EEPROM_ADDR) {

@@ -27,7 +27,7 @@
 #define STATUS_F  11    //Firmware update
 #define STATUS_B  12    //Performing macro (busy)
 
-#define _STATUS_DEBUG 1
+#define _STATUS_DEBUG 0
 
 #define _STATUS_TIME_SHIFT 8
 #define _TIME_LONGPRESS (5120>>_STATUS_TIME_SHIFT)

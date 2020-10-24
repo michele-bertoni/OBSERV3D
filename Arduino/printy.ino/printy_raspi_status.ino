@@ -15,7 +15,8 @@ RaspiStatus::RaspiStatus(uint8_t raspiStatusPin, uint8_t raspiSwitchPin)
   : raspiStatusPin(raspiStatusPin), raspiSwitchPin(raspiSwitchPin)
 {
   pinMode(raspiStatusPin, INPUT);
-  switchRaspiStatus(_RASPI_STATUS_ON, millis()>>_RASPI_TIME_SHIFT);
+  raspiStatus = _RASPI_STATUS_ON;
+  lastSwitchStatusTime = millis()>>_RASPI_TIME_SHIFT;
   isScheduledOn = true;
 }
 
@@ -62,6 +63,10 @@ void RaspiStatus::handleRaspiStatus() {
  */
 void RaspiStatus::setScheduledOn(bool isOn) {
   isScheduledOn = isOn;
+  #if _STATUS_DEBUG
+    Serial.print("R: -> ");
+    Serial.println(isOn);
+  #endif
 }
 
 /**
@@ -83,6 +88,10 @@ void RaspiStatus::switchRaspiStatus(uint8_t status, uint8_t time) {
   }
   raspiStatus = status;
   lastSwitchStatusTime = time;
+  #if _STATUS_DEBUG
+    Serial.print("R: status ");
+    Serial.println(status);
+  #endif
 }
 
 /**
@@ -91,6 +100,9 @@ void RaspiStatus::switchRaspiStatus(uint8_t status, uint8_t time) {
 void RaspiStatus::simulateButtonPress() {
   pinMode(raspiSwitchPin, OUTPUT);
   digitalWrite(raspiSwitchPin, LOW);
+  #if _STATUS_DEBUG
+    Serial.println("R: bDown");
+  #endif
 }
 
 /**
@@ -98,13 +110,20 @@ void RaspiStatus::simulateButtonPress() {
  */
 void RaspiStatus::simulateButtonRelease() {
   pinMode(raspiSwitchPin, INPUT);
+  #if _STATUS_DEBUG
+    Serial.println("R: bUp");
+  #endif
 } 
 
 /**
  * Reads the status of the Raspberry through the corresponding digital pin
  */
 bool RaspiStatus::isRaspiOn() {
-  return digitalRead(raspiStatusPin)==HIGH;
+  bool isRaspiOn = digitalRead(raspiStatusPin)==HIGH;
+  #if _STATUS_DEBUG
+    Serial.println(isRaspiOn ? "R: on" : "R: off"); 
+  #endif
+  return isRaspiOn;
 }
 
 /**

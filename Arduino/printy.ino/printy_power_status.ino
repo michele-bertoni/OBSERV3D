@@ -17,8 +17,9 @@ PowerStatus::PowerStatus(uint8_t v5Pin, uint8_t v12Pin, uint8_t v24Pin, uint8_t 
   pinMode(v5Pin, INPUT);
   pinMode(v12Pin, INPUT);
   pinMode(v24Pin, INPUT);
-  switchPowerStatus(isPowerOn() ? _POWER_STATUS_ON : _POWER_STATUS_OFF, millis()>>_POWER_TIME_SHIFT);
-  isScheduledOn = powerStatus==_POWER_STATUS_ON;
+  powerStatus = _POWER_STATUS_OFF;
+  lastSwitchStatusTime = millis()>>_POWER_TIME_SHIFT;
+  isScheduledOn = false;
 }
 
 /**
@@ -71,7 +72,7 @@ void PowerStatus::setScheduledOn(bool isOn) {
   isScheduledOn = isOn;
 
   #if _STATUS_DEBUG
-    Serial.println(isOn ? "P: -> on" : "Powerstrip: -> off");
+    Serial.println(isOn ? "P: -> on" : "P: -> off");
   #endif
 }
 
@@ -151,9 +152,7 @@ bool PowerStatus::isPowerOn() {
     Serial.println("V");
   #endif
   
-  return  ((voltage5<=_5V+_5V_TOLERANCE) && (voltage5>=_5V-_5V_TOLERANCE)) ||
-          ((voltage12<=_12V+_12V_TOLERANCE) && (voltage12>=_12V-_12V_TOLERANCE)) ||
-          ((voltage24<=_24V+_24V_TOLERANCE) && (voltage24>=_24V-_24V_TOLERANCE)) ;
+  return  (voltage5>=_5V-_5V_TOLERANCE) || (voltage12>=_12V-_12V_TOLERANCE) || (voltage24>=_24V-_24V_TOLERANCE);
 }
 
 /**

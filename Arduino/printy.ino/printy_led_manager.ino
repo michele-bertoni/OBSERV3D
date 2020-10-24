@@ -151,13 +151,13 @@ void LedManager::resetSettings(uint8_t startingPosition=0) {
     case 1:  setExtruderLedsOn(true);
     case 2:  hue = 0;
     case 3:  saturation = 0;
-    case 4:  brightness = 128;
+    case 4:  brightness = 255;
     case 5:  setEffectMode(0); 
     case 6:  setFadingMode(0);
     case 7:  setEffectDuration(20); 
     case 8:  setFadingDuration(4);
     case 9:  extHue = 0; 
     case 10: extSaturation = 0;
-    case 11: extBrightness = 64;
+    case 11: extBrightness = 128;
   }
 }

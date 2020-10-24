@@ -15,13 +15,13 @@ Communication communication;
 
 void setup() {
   // put your setup code here, to run once:
-  communication.setup(BAUDRATE);
+  //communication.setup(BAUDRATE);
   ledEffects.setup();
 }
-
+ 
 void loop() {
   // put your main code here, to run repeatedly:
-  communication.read();
-  printerStatus.checkPowerStatus();
+  //communication.read();
+  //printerStatus.checkPowerStatus();
   ledEffects.handleLeds();
 }

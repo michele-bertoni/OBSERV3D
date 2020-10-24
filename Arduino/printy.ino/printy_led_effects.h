@@ -14,12 +14,21 @@
 #define _LED_STATUS_EFFECTS 19
 #define _LED_PRINTING_EFFECTS 28
 
-#define NUM_CHLEDS 243
-#define NUM_C1LEDS 67
-#define NUM_C2LEDS 47
-#define NUM_C3LEDS 51
-#define NUM_C4LEDS 78
-#define NUM_EXTLEDS 6
+#ifndef DEBUG_MODE
+  #define NUM_C1LEDS 67
+  #define NUM_C2LEDS 47
+  #define NUM_C3LEDS 51
+  #define NUM_C4LEDS 78
+  #define NUM_CHLEDS (NUM_C1LEDS+NUM_C2LEDS+NUM_C3LEDS+NUM_C4LEDS)
+  #define NUM_EXTLEDS 6
+#else
+  #define NUM_C1LEDS 1
+  #define NUM_C2LEDS 1
+  #define NUM_C3LEDS 1
+  #define NUM_C4LEDS 1
+  #define NUM_CHLEDS (NUM_C1LEDS+NUM_C2LEDS+NUM_C3LEDS+NUM_C4LEDS)
+  #define NUM_EXTLEDS 1
+#endif
 
 #define PIN_LEDS_C1 10
 #define PIN_LEDS_C2 9
