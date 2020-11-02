@@ -15,8 +15,9 @@ RaspiStatus::RaspiStatus(uint8_t raspiStatusPin, uint8_t raspiSwitchPin)
   : raspiStatusPin(raspiStatusPin), raspiSwitchPin(raspiSwitchPin)
 {
   pinMode(raspiStatusPin, INPUT);
-  raspiStatus = _RASPI_STATUS_ON;
+  raspiStatus = _RASPI_STATUS_CHARGE;
   lastSwitchStatusTime = millis()>>_RASPI_TIME_SHIFT;
+  dischargeStartTime = lastSwitchStatusTime;
   isScheduledOn = true;
 }
 
@@ -31,28 +32,42 @@ void RaspiStatus::handleRaspiStatus() {
       if(isScheduledOn) {                                       //if it was scheduled to switch Raspberry on
         switchRaspiStatus(_RASPI_STATUS_SHORTPRESS, time);
       }
-      else if(time-lastSwitchStatusTime >= _RASPI_TIME_WAIT) {  //or if Raspberry should be off but it's on
+      else if((uint8_t)(time-lastSwitchStatusTime) >= _RASPI_TIME_WAIT) {  //or if Raspberry should be off but it's on
         isRaspiOn() ? switchRaspiStatus(_RASPI_STATUS_LONGPRESS, time) : setLastSwitchStatusTime(time);
-        //TODO: debug error
       }
       break;
     case _RASPI_STATUS_SHORTPRESS:  //Raspberry is off and the powering simulated button is being pressed
-      if(time-lastSwitchStatusTime>=_RASPI_TIME_SHORTPRESS) {   //if enough time passed
-        switchRaspiStatus(_RASPI_STATUS_ON, time);
+      if((uint8_t)(time-lastSwitchStatusTime)>=_RASPI_TIME_SHORTPRESS) {   //if enough time passed
+        switchRaspiStatus(_RASPI_STATUS_CHARGE, time);
       }
       break;
     case _RASPI_STATUS_ON:          //Raspberry is on
       if(!isScheduledOn) {                                      //if it was scheduled to switch Raspberry off
         switchRaspiStatus(_RASPI_STATUS_LONGPRESS, time);
       }
-      else if(time-lastSwitchStatusTime >= _RASPI_TIME_WAIT) {  //or if Raspberry should be on but it's off
+      else if((uint8_t)(time-lastSwitchStatusTime) >= _RASPI_TIME_WAIT) {  //or if Raspberry should be on but it's off
         !isRaspiOn() ? switchRaspiStatus(_RASPI_STATUS_SHORTPRESS, time) : setLastSwitchStatusTime(time);
-        //TODO: debug error
       }
       break;
     case _RASPI_STATUS_LONGPRESS:   //Raspberry is on and the powering simulated button is being pressed
-      if(time-lastSwitchStatusTime>=_RASPI_TIME_LONGPRESS) {    //if enough time passed
-        switchRaspiStatus(_RASPI_STATUS_OFF, time);
+      if((uint8_t)(time-lastSwitchStatusTime)>=_RASPI_TIME_LONGPRESS) {    //if enough time passed
+        switchRaspiStatus(_RASPI_STATUS_DISCHARGE, time);
+      }
+      break;
+    case _RASPI_STATUS_DISCHARGE: //Raspberry is off, but voltage value might still be high for at maximum _RASPI_TIME_DISCHARGE
+      if((uint8_t)(time-lastSwitchStatusTime) >= _RASPI_TIME_WAIT) {     //if discharging completed
+        !isRaspiOn() ? switchRaspiStatus(_RASPI_STATUS_OFF, time) : setLastSwitchStatusTime(time);
+      }
+      if((uint8_t)(time-dischargeStartTime) >= _RASPI_TIME_DISCHARGE) {  //if discharging is taking too much time
+        !isRaspiOn() ? switchRaspiStatus(_RASPI_STATUS_OFF, time) : switchRaspiStatus(_RASPI_STATUS_ON, time);
+      }
+      break;
+    case _RASPI_STATUS_CHARGE: //Raspberry is on, but voltage value might still be low for at maximum _RASPI_TIME_CHARGE
+      if((uint8_t)(time-lastSwitchStatusTime) >= _RASPI_TIME_WAIT) {     //if charging completed
+        isRaspiOn() ? switchRaspiStatus(_RASPI_STATUS_ON, time) : setLastSwitchStatusTime(time);
+      }
+      if((uint8_t)(time-dischargeStartTime) >= _RASPI_TIME_CHARGE) {     //if charging is taking too much time
+        isRaspiOn() ? switchRaspiStatus(_RASPI_STATUS_ON, time) : switchRaspiStatus(_RASPI_STATUS_OFF, time);
       }
       break;
   }
@@ -80,11 +95,14 @@ bool RaspiStatus::isOff() {
  * Switch to the a new status, passed as argument, updating the time of the latest status switch and simulating button pressure and release
  */
 void RaspiStatus::switchRaspiStatus(uint8_t status, uint8_t time) {
-  if(status == _RASPI_STATUS_OFF || status == _RASPI_STATUS_ON) {
-    simulateButtonRelease();
-  }
-  else if(status == _RASPI_STATUS_SHORTPRESS || status == _RASPI_STATUS_LONGPRESS) {
+  if(status == _RASPI_STATUS_SHORTPRESS || status == _RASPI_STATUS_LONGPRESS) {
     simulateButtonPress();
+  }
+  else {
+    simulateButtonRelease();
+    if(status == _RASPI_STATUS_CHARGE || status == _RASPI_STATUS_DISCHARGE) {
+      dischargeStartTime = time;
+    }
   }
   raspiStatus = status;
   lastSwitchStatusTime = time;

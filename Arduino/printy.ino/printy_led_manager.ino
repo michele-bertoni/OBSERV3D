@@ -158,6 +158,6 @@ void LedManager::resetSettings(uint8_t startingPosition=0) {
     case 8:  setFadingDuration(4);
     case 9:  extHue = 0; 
     case 10: extSaturation = 0;
-    case 11: extBrightness = 128;
+    case 11: extBrightness = 64;
   }
 }

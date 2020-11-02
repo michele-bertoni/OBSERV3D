@@ -17,9 +17,10 @@ PowerStatus::PowerStatus(uint8_t v5Pin, uint8_t v12Pin, uint8_t v24Pin, uint8_t 
   pinMode(v5Pin, INPUT);
   pinMode(v12Pin, INPUT);
   pinMode(v24Pin, INPUT);
-  powerStatus = _POWER_STATUS_OFF;
+  powerStatus = _POWER_STATUS_CHARGE;
   lastSwitchStatusTime = millis()>>_POWER_TIME_SHIFT;
-  isScheduledOn = false;
+  dischargeStartTime = lastSwitchStatusTime;
+  isScheduledOn = true;
 }
 
 /**
@@ -31,37 +32,46 @@ void PowerStatus::handlePowerStatus() {
   switch(powerStatus) {
     case _POWER_STATUS_OFF:         //Power strip is off
       if(isScheduledOn) {                                       //if it was scheduled to switch power strip on
-        switchPowerStatus(_POWER_STATUS_PRESSON, time);
+        !isPowerOn() ? switchPowerStatus(_POWER_STATUS_PRESSON, time) : switchPowerStatus(_POWER_STATUS_ON, time);
       }
-      else if(time-lastSwitchStatusTime >= _POWER_TIME_WAIT) {  //or if power strip should be off, but it has been switched on in other ways
+      else if((uint8_t)(time-lastSwitchStatusTime) >= _POWER_TIME_WAIT) {  //or if power strip should be off, but it has been switched on in other ways
         isPowerOn() ? switchPowerStatus(_POWER_STATUS_ON, time) : setLastSwitchStatusTime(time);
       }
       break;
     case _POWER_STATUS_PRESSON:     //Power strip is off and the powering simulated button is being pressed
-      if(time-lastSwitchStatusTime>=_POWER_TIME_PRESS) {   //if enough time passed
+      if((uint8_t)(time-lastSwitchStatusTime)>=_POWER_TIME_PRESS) {   //if enough time passed
         switchPowerStatus(_POWER_STATUS_ON, time);
       }
       break;
     case _POWER_STATUS_ON:          //Power strip is on
       if(!isScheduledOn) {                                      //if it was scheduled to switch power strip off
-        switchPowerStatus(_POWER_STATUS_PRESSOFF, time);
+        isPowerOn() ? switchPowerStatus(_POWER_STATUS_PRESSOFF, time) : switchPowerStatus(_POWER_STATUS_OFF, time);
       }
-      else if(time-lastSwitchStatusTime >= _POWER_TIME_WAIT) {  //or if power strip should be on, but it has been switched off in other ways
+      else if((uint8_t)(time-lastSwitchStatusTime) >= _POWER_TIME_WAIT) {  //or if power strip should be on, but it has been switched off in other ways
         !isPowerOn() ? switchPowerStatus(_POWER_STATUS_OFF, time) : setLastSwitchStatusTime(time);
       }
       break;
     case _POWER_STATUS_PRESSOFF:    //Power strip is on and the powering simulated button is being pressed
-      if(time-lastSwitchStatusTime>=_POWER_TIME_PRESS) {    //if enough time passed
+      if((uint8_t)(time-lastSwitchStatusTime)>=_POWER_TIME_PRESS) {    //if enough time passed
         switchPowerStatus(_POWER_STATUS_DISCHARGE, time);
       }
       break;
     case _POWER_STATUS_DISCHARGE: //Power strip is off, but PSUs voltage values might still be high for at maximum _POWER_TIME_DISCHARGE
-      if(time-lastSwitchStatusTime >= _POWER_TIME_WAIT) {     //if discharging completed
+      if((uint8_t)(time-lastSwitchStatusTime) >= _POWER_TIME_WAIT) {     //if discharging completed
         !isPowerOn() ? switchPowerStatus(_POWER_STATUS_OFF, time) : setLastSwitchStatusTime(time);
       }
-      if(time-dischargeStartTime >= _POWER_TIME_DISCHARGE) {  //if discharging is taking too much time
+      if((uint8_t)(time-dischargeStartTime) >= _POWER_TIME_DISCHARGE) {  //if discharging is taking too much time
         !isPowerOn() ? switchPowerStatus(_POWER_STATUS_OFF, time) : switchPowerStatus(_POWER_STATUS_ON, time);
       }
+      break;
+    case _POWER_STATUS_CHARGE: //Power strip is on, but PSUs voltage values might still be low for at maximum _POWER_TIME_CHARGE
+      if((uint8_t)(time-lastSwitchStatusTime) >= _POWER_TIME_WAIT) {     //if charging completed
+        isPowerOn() ? switchPowerStatus(_POWER_STATUS_ON, time) : setLastSwitchStatusTime(time);
+      }
+      if((uint8_t)(time-dischargeStartTime) >= _POWER_TIME_CHARGE) {     //if charging is taking too much time
+        isPowerOn() ? switchPowerStatus(_POWER_STATUS_ON, time) : switchPowerStatus(_POWER_STATUS_OFF, time);
+      }
+      break;
   }
 }
 
@@ -93,6 +103,7 @@ void PowerStatus::switchPowerStatus(uint8_t status, uint8_t time) {
       simulateButtonRelease();
       break;
     case _POWER_STATUS_DISCHARGE:
+    case _POWER_STATUS_CHARGE:
       dischargeStartTime = time;
       simulateButtonRelease();
       break;

@@ -15,7 +15,7 @@ PrinterStatus::PrinterStatus(uint8_t powerButtonPin, uint8_t v5Pin, uint8_t v12P
 {
   loadSettings();
   pinMode(powerButtonPin, INPUT_PULLUP);
-  printerStatus = STATUS_O;
+  printerStatus = STATUS_U;
   
 }
 
@@ -28,7 +28,6 @@ void PrinterStatus::checkPowerStatus() {
       setNewPrinterStatus(STATUS_D);
       scheduledPowerOff = false;
       powerStatus.setScheduledOn(false);
-      raspiStatus.setScheduledOn(keepRaspberryOn);
     }
     /* if the printer is off and it might switch on */
     else if(!scheduledPowerOff){
@@ -60,8 +59,8 @@ bool PrinterStatus::checkPowerButton(uint8_t time) {
     wasButtonPressed = false;
   }
   else if(!wasButtonPressed) {        //button pressed and not already pressed
-    if((time-lastPBUnpressedTime>=_TIME_LONGPRESS && isSafeToForceSwitch(newPrinterStatus) && isSafeToForceSwitch(printerStatus)) || 
-       (time-lastPBUnpressedTime>=_TIME_SHORTPRESS && isSafeToSwitch(newPrinterStatus) && isSafeToSwitch(printerStatus))) {
+    if(((uint8_t)(time-lastPBUnpressedTime)>=_TIME_LONGPRESS && isSafeToForceSwitch(newPrinterStatus) && isSafeToForceSwitch(printerStatus)) || 
+       ((uint8_t)(time-lastPBUnpressedTime)>=_TIME_SHORTPRESS && isSafeToSwitch(newPrinterStatus) && isSafeToSwitch(printerStatus))) {
       wasButtonPressed = true;
       #if _STATUS_DEBUG
         Serial.println("bDown");
@@ -138,6 +137,7 @@ void PrinterStatus::loadSettings() {
 uint8_t storedBytes = EEPROM.read(_STATUS_FIRST_EEPROM_ADDR);
   switch(storedBytes) {
     case 1: keepRaspberryOn = EEPROM.read(_STATUS_FIRST_EEPROM_ADDR+1);
+            break;
     default: resetSettings(); 
   }
   if(storedBytes != _STATUS_LAST_EEPROM_ADDR-_STATUS_FIRST_EEPROM_ADDR) {
@@ -147,6 +147,6 @@ uint8_t storedBytes = EEPROM.read(_STATUS_FIRST_EEPROM_ADDR);
 
 void PrinterStatus::resetSettings(uint8_t startingPosition=0) {
   switch(startingPosition) {
-    case 0: setKeepRaspberryOn(false);
+    case 0: keepRaspberryOn = false;
   }
 }

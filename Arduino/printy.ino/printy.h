@@ -24,7 +24,7 @@
 #define PIN_RASPI_SWITCH 12
 #define PIN_RASPI_STATUS 4
 
-#if _COMM_DEBUG || _STATUS_DEBUG
+#if _COMM_DEBUG || _STATUS_DEBUG || _LED_DEBUG
   #define BAUDRATE 115200
   #pragma message "Printy.ino v0.5 - DEBUG MODE"
   #define DEBUGMODE 1 

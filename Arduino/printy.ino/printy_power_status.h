@@ -12,19 +12,21 @@
 /**
  * Time constants
  */
-#define _POWER_TIME_SHIFT 8                               //discard the first n less significant bits
-#define _POWER_TIME_PRESS (512>>_POWER_TIME_SHIFT)        //powerSwitchPin will go to ground for 512ms
-#define _POWER_TIME_WAIT (3072>>_POWER_TIME_SHIFT)        //check if PSUs are on every 3.072s
-#define _POWER_TIME_DISCHARGE (59904>>_POWER_TIME_SHIFT)  //max dicharge time is 59.904s
+#define _POWER_TIME_SHIFT (uint8_t)(8)                             //discard the first n less significant bits
+#define _POWER_TIME_PRESS (uint8_t)(512>>_POWER_TIME_SHIFT)        //powerSwitchPin will go to ground for 512ms
+#define _POWER_TIME_WAIT (uint8_t)(3072>>_POWER_TIME_SHIFT)        //check if PSUs are on every 3.072s
+#define _POWER_TIME_DISCHARGE (uint8_t)(59904>>_POWER_TIME_SHIFT)  //max dicharge time is 59.904s
+#define _POWER_TIME_CHARGE (uint8_t)(6144>>_POWER_TIME_SHIFT)      //max charge time is 6.144s
 
 /**
  * Possible status of power strip
  */
-#define _POWER_STATUS_OFF 0
-#define _POWER_STATUS_PRESSON 1       //between button pressure and release; right after this phase the power strip will switch on
-#define _POWER_STATUS_ON 2
-#define _POWER_STATUS_PRESSOFF 3      //between button pressure and release; right after this phase the power strip will switch on
-#define _POWER_STATUS_DISCHARGE 4     //power strip is off, but the PSUs voltage values might be still high for some seconds
+#define _POWER_STATUS_OFF (uint8_t)(0)
+#define _POWER_STATUS_PRESSON (uint8_t)(1)    //between button pressure and release; right after this phase the power strip will switch on
+#define _POWER_STATUS_CHARGE (uint8_t)(2)     //power strip is on, but the PSUs voltage values might be still low for some seconds
+#define _POWER_STATUS_ON (uint8_t)(3)
+#define _POWER_STATUS_PRESSOFF (uint8_t)(4)   //between button pressure and release; right after this phase the power strip will switch off
+#define _POWER_STATUS_DISCHARGE (uint8_t)(5)  //power strip is off, but the PSUs voltage values might be still high for some seconds
 
 /**
  * Voltage calculations constants
@@ -73,7 +75,7 @@
 class PowerStatus {
   private: 
     uint8_t powerStatus, lastSwitchStatusTime;            //current status of the main power and time since that status was last changed
-    uint8_t dischargeStartTime;                           //time when latest discharge began
+    uint8_t dischargeStartTime;                           //time when latest charge/discharge began
     uint8_t voltage5, voltage12, voltage24;               //voltage values of the 5V, 12V and 24V PSUs; value stored is 8 times the real value
     const uint8_t v5Pin, v12Pin, v24Pin;                  //pins for reading actual voltage values of the 5V, 12V and 24V PSUs
     const uint8_t powerSwitchPin;                         //pin for writing to switch power strip on or off

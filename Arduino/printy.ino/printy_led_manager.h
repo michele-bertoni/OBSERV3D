@@ -15,6 +15,8 @@
 #define _LED_FIRST_EEPROM_ADDR 0
 #define _LED_LAST_EEPROM_ADDR 12
 
+#define _LED_DEBUG 0
+
 class LedManager {
   public:
     LedManager();
