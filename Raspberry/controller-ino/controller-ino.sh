@@ -31,9 +31,9 @@ rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 # Main loop
 updated=0
 while [[ "1" -eq "1" ]]; do
-	if [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]; then
-		if [ "$updated" -ne 0 ]; then
-			if [ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload`" -eq "0" ]; then
+	if [[ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]]; then
+		if [[ "$updated" -ne 0 ]]; then
+			if [[ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload`" -eq "0" ]]; then
 				echo "Code uploaded successfully."
 			else
 				echo "Upload failed."
@@ -45,7 +45,7 @@ while [[ "1" -eq "1" ]]; do
 		# TODO
 		#
 		# The following code simulates the actual code:
-		while [ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]; do
+		while [[ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]]; do
 			sleep 1
 		done
 		# End of the simulated code
