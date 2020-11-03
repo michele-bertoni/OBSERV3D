@@ -34,4 +34,4 @@ date +"Date : %d/%m/%Y Time : %H.%M.%S"
 # Wait 20 second for net to be established
 sleep 20
 
-python3 telegram-bot.py
+python3 /home/pi/Printy-McPrintface/Raspberry/telegram-bot/telegram-bot.py
