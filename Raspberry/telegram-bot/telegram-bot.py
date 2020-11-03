@@ -62,7 +62,10 @@ def register(message):
                               text=reply_text.format(i))
 
     requests.get(send_gcode + 'M292')
-    del pending_auth[message.chat.id]
+    try:
+        del pending_auth[message.chat.id]
+    except KeyError:
+        pass
 
 
 @bot.message_handler(func=lambda message: message.chat.id in pending_auth)
