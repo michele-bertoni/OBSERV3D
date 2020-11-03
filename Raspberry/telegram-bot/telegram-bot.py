@@ -41,6 +41,11 @@ def register(message):
     if auth.authentication(message.chat.id):
         bot.send_message(message.chat.id, "Already authenticated")
         return
+
+    if message.chat.id in pending_auth:
+        bot.send_message(message.chat.id, "Other authentication pending")
+        return
+
     reply_text = "Send me the OTP displayed by the printer \n({} seconds left)"
 
     i = 60
@@ -73,12 +78,14 @@ def msg_image_select(message):
     if auth.authentication(message.chat.id):
         bot.send_message(message.chat.id, "Already authenticated")
         return
-
-    if pending_auth[message.chat.id] == message.text:
-        bot.send_message(message.chat.id, "Authenticated")
-        auth.register(message.chat.id)
-    else:
-        bot.send_message(message.chat.id, "Authentication failed, try again")
+    try:
+        if message.chat.id in pending_auth and pending_auth[message.chat.id] == message.text:
+            bot.send_message(message.chat.id, "Authenticated")
+            auth.register(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, "Authentication failed, try again")
+    except KeyError:
+        pass
 
 
 @bot.message_handler(commands=['logout'])
