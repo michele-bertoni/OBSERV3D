@@ -2,6 +2,7 @@ import telebot
 import time
 import requests
 from libraries import authentication as auth
+from PIL import Image
 
 TOKEN = ""
 try:
