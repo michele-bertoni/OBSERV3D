@@ -86,7 +86,7 @@ do
                 cloned=1
             fi
             if [[ "$pull" =~ "Raspberry/" ]]; then
-                echo Arduino source code changed
+                echo Raspberry scripts code changed
                 cloned=$((cloned+2))
             fi
 		    # Otherwise if some non-Arduino files changed
