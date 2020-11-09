@@ -37,7 +37,7 @@
 #define PIN_LEDS_E  11
 
 #define _LEDS_TIME_SHIFT 2
-#define _LEDS_UPDATE_FREQ 80  //possible frequencies: 2, 3, 4, 5, 6, 8, 12, 15, 16, 20, 24, 30, 48, 60, 80, 120
+#define _LEDS_UPDATE_FREQ 30  //possible frequencies: 2, 3, 4, 5, 6, 8, 12, 15, 16, 20, 24, 30, 48, 60, 80, 120
 #define _LEDS_UPDATE_TIME ((1000/_LEDS_UPDATE_FREQ)>>_LEDS_TIME_SHIFT)
 
 class LedEffects {

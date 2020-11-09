@@ -37,7 +37,7 @@ ping -c 10 192.168.0.1
 # If none of the pings was successfull, try another ip
 if [ "$?" -ne "0" ]; then
   # Ping 10 times another always on device
-  ping -c 10 192.168.1.1
+  ping -c 2 192.168.1.1
 
   # If none of the pings was successfull, reboot
   if [ "$?" -ne "0" ]; then
