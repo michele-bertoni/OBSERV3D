@@ -43,8 +43,18 @@ void LedEffects::handleLeds() {
     lastUpdateTime = time;
     //fill_solid(chLeds, NUM_CHLEDS, CHSV(ledManager.getHue(), ledManager.getSaturation(), ledManager.getBrightness()));
     //fill_solid(extLeds, NUM_EXTLEDS, CHSV(ledManager.getExtHue(), ledManager.getExtSaturation(), ledManager.getExtBrightness()));
-    fill_solid(chLeds, NUM_CHLEDS, CHSV(0, 0, 255));
-    fill_solid(extLeds, NUM_EXTLEDS, CHSV(0, 0, 64));
+    if(printerStatus.getPrinterStatus() == STATUS_F) {
+      fill_solid(chLeds, NUM_CHLEDS, CHSV(200, 255, 255));
+      fill_solid(extLeds, NUM_EXTLEDS, CHSV(72, 255, 64));
+    }
+    else if(printerStatus.getPrinterStatus() == STATUS_I) {
+      fill_solid(chLeds, NUM_CHLEDS, CHSV(0, 0, 255));
+      fill_solid(extLeds, NUM_EXTLEDS, CHSV(0, 0, 64));
+    }
+    else {
+      fill_solid(chLeds, NUM_CHLEDS, CHSV(0, 255, 255));
+      fill_solid(extLeds, NUM_EXTLEDS, CHSV(0, 255, 64));
+    }
     FastLED.show();
     #if _LED_DEBUG
       Serial.print("Leds update ");
