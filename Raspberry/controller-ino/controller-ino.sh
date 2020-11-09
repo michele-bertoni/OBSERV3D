@@ -42,14 +42,8 @@ while [[ "1" -eq "1" ]]; do
 		touch /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 		echo "Running Python code..."
 		# Run Python code
-		# TODO
-		#
-		# The following code simulates the actual code:
-		while [[ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]]; do
-			sleep 1
-		done
-		# End of the simulated code
-		#
+		python3 /home/pi/Printy-McPrintface/Raspberry/controller-ino/controller-ino.py
+
 		rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 		echo "Updating Arduino..."
 		updated=1
