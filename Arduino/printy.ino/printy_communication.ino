@@ -168,7 +168,9 @@ uint8_t Communication::handleMessage(byte message) {
               return (message==0b10000111 || message==0b10001001) ? 9 : (message&0b00001111)+1;
             }
             else {
-              printerStatus.setNewPrinterStatus((message & 0b00001111)+3);
+              if(printerStatus.getPrinterStatus()!=STATUS_D && printerStatus.getNewPrinterStatus()!=STATUS_D) {
+                printerStatus.setNewPrinterStatus((message & 0b00001111)+3);
+              }
             }
           }
           else {                        //10001010 -> 10001111  [138, 143]
@@ -286,7 +288,9 @@ void Communication::handleExtraData() {
                 Serial.print("\t");
               #endif
     default:  awaitingData=0;
-              printerStatus.setNewPrinterStatus(awaitingStatus);
+              if(printerStatus.getPrinterStatus()!=STATUS_D && printerStatus.getNewPrinterStatus()!=STATUS_D) {
+                printerStatus.setNewPrinterStatus(awaitingStatus);
+              }
   }
 }
 
