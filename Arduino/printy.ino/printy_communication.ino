@@ -91,10 +91,10 @@ uint8_t Communication::handleMessage(byte message) {
     }
     else {                        //10xxxxxx  [128, 191]
       if(message >= 0b10100000) {   //101xxxxx  [160, 191]
-        ledManager.setEffectDuration(message >= 0b10110000 ? (message-171)<<2 : (message-159));
+        ledManager.setEffectDuration(message >= 0b10110000 ? (message-172)<<2 : (message-160));
         #if _COMM_DEBUG
           Serial.print("effectDuration: ");
-          Serial.print(message >= 0b10110000 ? (message-171)<<2 : (message-159));
+          Serial.print(message >= 0b10110000 ? (message-172)<<2 : (message-160));
         #endif    
       }
       else {                        //100xxxxx  [128, 159]
@@ -149,8 +149,9 @@ uint8_t Communication::handleMessage(byte message) {
                   #endif
                 }
                 else {                        //10010000  144
+                  ledManager.restoreEffectMode();
                   #if _COMM_DEBUG
-                    Serial.print("Undefined");
+                    Serial.print("Restore effect mode");
                   #endif 
                 }
               }
@@ -332,7 +333,7 @@ void Communication::handleExtraData() {
   10001110  142 Undefined
   10001111  143 Undefined
   ------------------------------------------------------------------------------------------------------------
-  10010000  144 Undefined
+  10010000  144 Restore latest lights mode
   10010001  145 Load default settings
   10010010  146 Load stored settings
   10010011  147 Store current settings
@@ -348,13 +349,13 @@ void Communication::handleExtraData() {
   10011xxx  n   Fading duration (n-152)*2^9 ms    n-152     (<<9)
   10011111  159 Fading duration 3584ms            7         (<<9)
   ------------------------------------------------------------------------------------------------------------    
-  10100000  160 Effect duration 8192ms            1         (<<13)
-  10100001  161 Effect duration 16384ms           2         (<<13)
-  1010xxxx  n   Effect duration (n-159)*2^13 ms   n-159     (<<13)
-  10101111  175 Effect duratiom 131072ms          16        (<<13)
-  10110000  176 Effect duration 163840ms          20        (<<13)
-  1011xxxx  n   Effect duration (n-171)*2^15 ms   4*(n-171) (<<13)
-  10111111  191 Effect duration 655360 ms         80        (<<13)
+  10100000  160 Effect duration infinity          0         (<<13)
+  10100001  161 Effect duration 8192ms            1         (<<13)
+  1010xxxx  n   Effect duration (n-160)*2^13 ms   n-160     (<<13)
+  10101111  175 Effect duration 122880ms          15        (<<13)
+  10110000  176 Effect duration 131072ms          16        (<<13)
+  1011xxxx  n   Effect duration (n-172)*2^15 ms   4*(n-172) (<<13)
+  10111110  191 Effect duration 622592 ms         76        (<<13)
   ------------------------------------------------------------------------------------------------------------
   11000000  192 Saturation 0
   1000xxxx  n   Saturation (n-192)*17

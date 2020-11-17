@@ -1,13 +1,33 @@
-import requests
+###################################################################################################
+# Copyright (C) 2020 Michele Bertoni - All Rights Reserved                                        #
+# You may use, distribute and modify this code under the terms of the CC BY-NC-SA 3.0 license.    #
+# You can find a copy of the license inside the LICENSE file you received with this code          #
+# (https://github.com/michele-bertoni/Printy-McPrintface/blob/master/LICENSE)                     #
+# or on the website of CreativeCommons (https://creativecommons.org/licenses/by-nc-sa/3.0/)       #
+###################################################################################################
+
 import os.path as path
-import serial
 import socket
 import time
+import requests
+import serial
+from simple_line_protocol import SimpleLineProtocol
+from stored_values import StoredValues
+from message import DuetMessage
 
 UPDATING_PATH = "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating"
 
+conf_path = "/home/pi/Printy-McPrintface/Raspberry/.conf/"
+duet_ip_conf_path = conf_path + "duet_ip.conf"
+
 DUET_HOST = "192.168.0.3"
-REQUEST_URL = "http://{}/rr_status?type={}"
+try:
+    with open(duet_ip_conf_path, 'r') as f:
+        DUET_HOST = f.readline().rstrip('\n\r')
+except Exception as e:
+    print(e)
+
+REQUEST_URL = "http://{}/rr_status?type=".format(DUET_HOST)
 
 SERIAL_PORT = "/dev/ttyUSB0"
 BAUDRATE = 2400
@@ -24,40 +44,9 @@ serMessFromStatus = {'C':-1,
                      'T':-1
                      }
 
-
-class SimpleLineProtocol:
-    def __init__(self, soc):
-        self.socket = soc
-        self.buffer = b''
-        self.NEWLINE = b'\r'
-
-    def write(self, msg):
-        msg = msg.strip()
-        msg += '\r'
-        self.socket.sendall(msg.encode())
-
-    def read_lines(self):
-        lines = []
-        while self.NEWLINE not in self.buffer:
-            try:
-                d = self.socket.recv(1024)
-            except Exception as sockException:
-                if str(sockException) != 'timed out':
-                    print(sockException)
-                return lines
-            if not d:
-                return lines
-            self.buffer = self.buffer + d
-
-        while self.NEWLINE in self.buffer:
-            i = self.buffer.find(self.NEWLINE)
-            line = self.buffer[:i]
-            self.buffer = self.buffer[i:].lstrip()
-            lines.append(line.decode("utf-8"))
-        return lines
-
-
 if __name__ == "__main__":
+    storedValues = StoredValues(".storedValues.json")
+    duet_message = DuetMessage(stored_values=storedValues)
     ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
     statusType = 2
 
@@ -92,13 +81,18 @@ if __name__ == "__main__":
                 telnetMessages = conn.read_lines()
                 while len(telnetMessages) > 0:
                     m = telnetMessages.pop(0)
-                    #TODO: handle message
-                    print(m)
-                response = requests.get(REQUEST_URL.format(DUET_HOST, statusType)).json()
+                    arduinoMessages = duet_message.handle_message(m)
+                    for am, log in arduinoMessages:
+                        if am >= 0:
+                            #ser.write(am.to_bytes(1, "big"))
+                            pass
+                        print(log)
+                response = requests.get(REQUEST_URL+str(statusType)).json()
                 #TODO: handle status
                 status = response['status']
                 if status == 'I':
                     ser.write(serMessFromStatus[status].to_bytes(1, "big"))
+                    pass
                 elif status == 'P':
                     statusType = 3
 

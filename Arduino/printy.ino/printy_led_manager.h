@@ -23,7 +23,7 @@ class LedManager {
     void setChamberLedsOn(bool ledsOn), setExtruderLedsOn(bool ledsOn);
     void setEditExtruderHSV(bool editExtruderHSV);
     void setHue(uint8_t value), setSaturation(uint8_t value), setBrightness(uint8_t value);
-    void setEffectMode(uint8_t mode), setFadingMode(uint8_t mode), setExtruderMode(uint8_t value);
+    void setEffectMode(uint8_t mode), setFadingMode(uint8_t mode), restoreEffectMode();
     void setEffectDuration(uint8_t duration), setFadingDuration(uint8_t duration);
     bool getChamberLedsOn(), getExtruderLedsOn(), getEditExtruderHSV();
     uint8_t getHue(), getSaturation(), getBrightness();
@@ -36,7 +36,7 @@ class LedManager {
     bool chamberLedsOn, extruderLedsOn, isEditExtruderHSV;
     uint8_t hue, saturation, brightness;
     uint8_t extHue, extSaturation, extBrightness;
-    uint8_t effectMode, fadingMode;
+    uint8_t effectMode, fadingMode, oldEffectMode;
     uint8_t effectDuration, fadingDuration;
 };
 

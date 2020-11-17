@@ -37,11 +37,16 @@ void LedManager::setBrightness(uint8_t value) {
 }
 
 void LedManager::setEffectMode(uint8_t mode) {
+  oldEffectMode = effectMode;
   effectMode = mode;
 }
 
 void LedManager::setFadingMode(uint8_t mode) {
   fadingMode = mode;
+}
+
+void LedManager::restoreEffectMode() {
+  effectMode = oldEffectMode;
 }
 
 void LedManager::setEffectDuration(uint8_t duration) {
@@ -158,6 +163,6 @@ void LedManager::resetSettings(uint8_t startingPosition=0) {
     case 8:  setFadingDuration(4);
     case 9:  extHue = 0; 
     case 10: extSaturation = 0;
-    case 11: extBrightness = 64;
+    case 11: extBrightness = 63;
   }
 }

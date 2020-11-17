@@ -1,8 +1,17 @@
-import telebot
+###################################################################################################
+# Copyright (C) 2020 Michele Bertoni - All Rights Reserved                                        #
+# You may use, distribute and modify this code under the terms of the CC BY-NC-SA 3.0 license.    #
+# You can find a copy of the license inside the LICENSE file you received with this code          #
+# (https://github.com/michele-bertoni/Printy-McPrintface/blob/master/LICENSE)                     #
+# or on the website of CreativeCommons (https://creativecommons.org/licenses/by-nc-sa/3.0/)       #
+###################################################################################################
+
 import time
+
 import requests
-from libraries import authentication as auth
-from PIL import Image
+import telebot
+
+import authentication as auth
 
 TOKEN = ""
 try:
@@ -14,7 +23,35 @@ except IOError:
 
 COMMANDS = '/start', '/help', '/login', '/logout', 'snap'
 pending_auth = {}
-send_gcode = 'http://{}/rr_gcode?gcode='.format('192.168.0.3')
+
+conf_path = "/home/pi/Printy-McPrintface/Raspberry/.conf/"
+duet_ip_conf_path = conf_path + "duet_ip.conf"
+motion_ip_conf_path = conf_path + "motion_ip.conf"
+motion_files_conf_path = conf_path + "motion_snap_path.conf"
+
+duet_ip = '192.168.0.3'
+try:
+    with open(duet_ip_conf_path, 'r') as f:
+        duet_ip = f.readline().rstrip('\n\r')
+except Exception as e:
+    print(e)
+
+motion_ip = '127.0.0.1:8080'
+try:
+    with open(motion_ip_conf_path, 'r') as f:
+        motion_ip = f.readline().rstrip('\n\r')
+except Exception as e:
+    print(e)
+
+motion_lastSnap_path = "/var/lib/motion/lastSnap.jpg"
+try:
+    with open(motion_files_conf_path, 'r') as f:
+        motion_lastSnap_path = f.readline().rstrip('\n\r')
+except Exception as e:
+    print(e)
+
+send_gcode = 'http://{}/rr_gcode?gcode='.format('duet_ip')
+send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
 
 def listener(messages):
     """
@@ -107,13 +144,15 @@ def send_snapshot(message):
         bot.send_message(message.chat.id, "Authentication failed: /login")
         return
 
-    requests.get("http://127.0.0.1:8080/0/action/snapshot")
-    time.sleep(1)
     try:
-        with open('/var/lib/motion/lastsnap.jpg', 'rb') as snap:
+        requests.get(send_request_snapshot)
+        time.sleep(1)
+
+        with open(motion_lastSnap_path, 'rb') as snap:
             bot.send_photo(message.chat.id, snap)
-    except IOError:
-        bot.send_message(message.chat.id, "Unable to send snapshot")
+    except Exception as exc:
+        print(exc)
+        bot.send_message(message.chat.id, "Unable to send snapshot: " + str(exc))
 
 
 @bot.message_handler(commands=['help'])
