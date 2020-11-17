@@ -73,6 +73,7 @@ if __name__ == "__main__":
             isTelnetConnected = True
         except Exception as e:
             print(e)
+            time.sleep(1)
 
     scheduledTime = time.time()
     while not path.exists(UPDATING_PATH):
