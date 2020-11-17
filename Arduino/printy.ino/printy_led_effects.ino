@@ -48,8 +48,15 @@ void LedEffects::handleLeds() {
       fill_solid(extLeds, NUM_EXTLEDS, CHSV(72, 255, 64));
     }
     else if(printerStatus.getPrinterStatus() == STATUS_I) {
-      fill_solid(chLeds, NUM_CHLEDS, CHSV(0, 0, 255));
-      fill_solid(extLeds, NUM_EXTLEDS, CHSV(0, 0, 64));
+      if(ledManager.getChamberLedsOn())
+        fill_solid(chLeds, NUM_CHLEDS, CHSV(ledManager.getHue(), ledManager.getSaturation(), ledManager.getBrightness()));
+      else
+        fill_solid(chLeds, NUM_CHLEDS, CHSV(0, 0, 0));
+
+      if(ledManager.getExtruderLedsOn())
+        fill_solid(extLeds, NUM_EXTLEDS, CHSV(ledManager.getExtHue(), ledManager.getExtSaturation(), ledManager.getExtBrightness()));
+      else
+        fill_solid(extLeds, NUM_EXTLEDS, CHSV(0, 0, 0));
     }
     else {
       fill_solid(chLeds, NUM_CHLEDS, CHSV(0, 255, 255));
