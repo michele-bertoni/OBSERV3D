@@ -42,7 +42,6 @@ while [[ "1" -eq "1" ]]; do
 		touch /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 		echo "Running Python code..."
 		# Run Python code
-		sleep 10
 		python3 /home/pi/Printy-McPrintface/Raspberry/controller-ino/controller-ino.py
 
 		rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
