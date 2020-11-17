@@ -17,7 +17,7 @@ from message import DuetMessage
 
 UPDATING_PATH = "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating"
 
-conf_path = "/home/pi/Printy-McPrintface/Raspberry/.conf/"
+conf_path = "/home/pi/Printy-McPrintface/Raspberry/.config/"
 duet_ip_conf_path = conf_path + "duet_ip.conf"
 
 DUET_HOST = "192.168.0.3"
