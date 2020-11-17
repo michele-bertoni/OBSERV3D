@@ -38,5 +38,5 @@ sleep 20
 sudo ifconfig
 
 # Go to Videos directory
-cd /home/pi/Videos
+cd /home/pi/Printy-McPrintface
 sudo python3 -m http.server 80
