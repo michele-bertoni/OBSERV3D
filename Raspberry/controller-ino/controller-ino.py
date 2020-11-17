@@ -61,7 +61,6 @@ if __name__ == "__main__":
     dtb=0
 
     isTelnetConnected = False
-    time.sleep(5)
 
     #TODO: change to non-blocking
     while not isTelnetConnected:
