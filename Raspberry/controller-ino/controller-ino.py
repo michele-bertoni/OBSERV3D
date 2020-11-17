@@ -66,6 +66,7 @@ if __name__ == "__main__":
     while not isTelnetConnected:
         try:
             print("Connecting to {}...".format(DUET_HOST))
+            time.sleep(1)
             sock = socket.create_connection((DUET_HOST, 23), timeout=0.1)
             time.sleep(4.5)  # RepRapFirmware uses a 4-second ignore period after connecting
             conn = SimpleLineProtocol(sock)
