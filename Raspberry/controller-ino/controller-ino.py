@@ -61,6 +61,7 @@ if __name__ == "__main__":
     dtb=0
 
     isTelnetConnected = False
+    time.sleep(5)
 
     #TODO: change to non-blocking
     while not isTelnetConnected:
@@ -73,7 +74,6 @@ if __name__ == "__main__":
             isTelnetConnected = True
         except Exception as e:
             print(e)
-            time.sleep(1)
 
     scheduledTime = time.time()
     while not path.exists(UPDATING_PATH):
