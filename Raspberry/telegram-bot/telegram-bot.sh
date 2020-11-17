@@ -31,7 +31,12 @@ set -x
 # Print date and time
 date +"Date : %d/%m/%Y Time : %H.%M.%S"
 
-# Wait 20 second for net to be established
-sleep 20
+# Move to source directory
+cd /home/pi/Printy-McPrintface/Raspberry/telegram-bot/
 
-python3 /home/pi/Printy-McPrintface/Raspberry/telegram-bot/telegram-bot.py
+# Loop in case telegram-bot dies
+while true; do
+    # Wait 10 second for net to be established
+    sleep 10
+    python3 telegram-bot.py
+done
