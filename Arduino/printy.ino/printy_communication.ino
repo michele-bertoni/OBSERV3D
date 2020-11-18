@@ -63,7 +63,7 @@ uint8_t Communication::handleMessage(byte message) {
               #endif 
             }
             else {                        //110100xx  [208, 211] 
-              if(message >= 0b11010110) {   //1101001x  [210, 211]
+              if(message >= 0b11010010) {   //1101001x  [210, 211]
                 ledManager.setEditExtruderHSV(message & 0b00000001);
                 #if _COMM_DEBUG
                   Serial.print("editExtruderHSV: ");
