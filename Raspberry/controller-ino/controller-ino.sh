@@ -25,6 +25,9 @@ exec > >(tee /home/pi/Printy-McPrintface/Raspberry/controller-ino/log.txt)
 # Redirect stderr to stdout
 exec 2>&1
 
+# Verbose mode
+set -x
+
 # Reset possibly leftover locks
 rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 
