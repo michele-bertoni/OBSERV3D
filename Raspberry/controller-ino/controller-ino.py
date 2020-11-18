@@ -47,7 +47,7 @@ serMessFromStatus = {'C':-1,
 if __name__ == "__main__":
     storedValues = StoredValues(".storedValues.json")
     duet_message = DuetMessage(stored_values=storedValues)
-    ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
+    #ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
     statusType = 2
 
     x=0
@@ -64,15 +64,17 @@ if __name__ == "__main__":
 
     #TODO: change to non-blocking
     while not isTelnetConnected:
+        print("Connecting to {}...".format(DUET_HOST))
         try:
-            print("Connecting to {}...".format(DUET_HOST))
-            sock = socket.create_connection((DUET_HOST, 23), timeout=0.1)
-            time.sleep(4.5)  # RepRapFirmware uses a 4-second ignore period after connecting
-            conn = SimpleLineProtocol(sock)
-            print("Connection established.")
+            sock = socket.create_connection((DUET_HOST, 23), timeout=5)
             isTelnetConnected = True
-        except Exception as e:
-            print(e)
+        except Exception as exc:
+            print(exc)
+
+    sock.settimeout(.1)
+    time.sleep(4.5)  # RepRapFirmware uses a 4-second ignore period after connecting
+    conn = SimpleLineProtocol(sock)
+    print("Connection established.")
 
     scheduledTime = time.time()
     while not path.exists(UPDATING_PATH):
