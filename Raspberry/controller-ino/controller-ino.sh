@@ -34,6 +34,9 @@ rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 # Move to source directory
 cd /home/pi/Printy-McPrintface/Raspberry/controller-ino/
 
+# Wait 10 second for net to be established
+sleep 10
+
 # Main loop
 updated=0
 while true; do
@@ -45,8 +48,6 @@ while true; do
 				echo "Upload failed."
 			fi
 		fi
-		# Wait 10 second for net to be established
-        sleep 10
 
 		touch /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 		echo "Running Python code..."
