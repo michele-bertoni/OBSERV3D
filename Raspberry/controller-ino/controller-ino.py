@@ -66,7 +66,7 @@ if __name__ == "__main__":
     while not isTelnetConnected:
         print("Connecting to {}...".format(DUET_HOST))
         try:
-            sock = socket.create_connection((DUET_HOST, 23), timeout=5)
+            sock = socket.create_connection((DUET_HOST, 23), timeout=1)
             isTelnetConnected = True
         except Exception as exc:
             print(exc)
@@ -86,8 +86,7 @@ if __name__ == "__main__":
                     arduinoMessages = duet_message.handle_message(m)
                     for am, log in arduinoMessages:
                         if am >= 0:
-                            #ser.write(am.to_bytes(1, "big"))
-                            pass
+                            ser.write(am.to_bytes(1, "big"))
                         print(log)
                 response = requests.get(REQUEST_URL+str(statusType)).json()
                 #TODO: handle status
