@@ -28,9 +28,12 @@ exec 2>&1
 # Reset possibly leftover locks
 rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 
+# Move to source directory
+cd /home/pi/Printy-McPrintface/Raspberry/controller-ino/
+
 # Main loop
 updated=0
-while [[ "1" -eq "1" ]]; do
+while true; do
 	if [[ ! -f "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating" ]]; then
 		if [[ "$updated" -ne 0 ]]; then
 			if [[ "`cat /home/pi/Printy-McPrintface/Raspberry/git-pull/.lastUpload`" -eq "0" ]]; then
@@ -39,6 +42,9 @@ while [[ "1" -eq "1" ]]; do
 				echo "Upload failed."
 			fi
 		fi
+		# Wait 10 second for net to be established
+        sleep 10
+
 		touch /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 		echo "Running Python code..."
 		# Run Python code
