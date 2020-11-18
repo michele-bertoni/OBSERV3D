@@ -56,6 +56,7 @@ class DuetMessage:
             needs_backup = False
             if variable.endswith(self.__backup_modifier):
                 needs_backup = True
+                variable = variable.replace(self.__backup_modifier, '')
 
             if variable == 'last':
                 variable = self.last_var
@@ -79,6 +80,7 @@ class DuetMessage:
             needs_backup = False
             if variable.endswith(self.__backup_modifier):
                 needs_backup = True
+                variable = variable.replace(self.__backup_modifier, '')
 
             if variable == 'last':
                 variable = self.last_var
@@ -97,13 +99,18 @@ class DuetMessage:
 
     def __decrease(self, variable, value):
         try:
+            needs_backup = False
+            if variable.endswith(self.__backup_modifier):
+                needs_backup = True
+                variable = variable.replace(self.__backup_modifier, '')
+
             if variable == 'last':
                 variable = self.last_var
 
             if value == 'rand':
                 return self.__assign(variable, value)
 
-            i, v = self.stored_values.increment_value(variable, -int(value))
+            i, v = self.stored_values.increment_value(variable, -int(value), is_reversible=needs_backup)
             self.last_var = variable
             if DuetMessage.__lights_separator in variable:
                 variable = variable.split(DuetMessage.__lights_separator)[1]
@@ -278,5 +285,5 @@ class DuetMessage:
 if __name__ == '__main__':
     sv = StoredValues('.storedValuesTest.json')
     dm = DuetMessage(sv)
-    print(dm.handle_message('*_hue+=rand, last-=2, extruder_value:=255; chamber_value-=4, chamberLightsOff, chamber_hue-=0'))
+    print(dm.handle_message('*_hue^+=rand, last-=2, extruder_value:=255; chamber_value-=4, chamberLightsOff, chamber_hue-=0'))
     print(dm.handle_message('last+=3'))
