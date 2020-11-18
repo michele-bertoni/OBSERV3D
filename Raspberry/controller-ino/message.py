@@ -134,18 +134,20 @@ class DuetMessage:
     __lights_separator = '_'
 
     def __revert_lights(self):
-        ret = []
+        commands = ''
         to_be_reverted = self.stored_values.revert_changes()
+        if len(to_be_reverted) == 0:
+            return -1, "There is nothing to be reverted"
+
         for variable, i, v in to_be_reverted:
             try:
                 if variable == 'lightsMode':
-                    ret.append((ArduinoMessage.get_message('revertLightsMode', 0), 'Reverted {}'.format(variable)))
+                    commands=commands+'revertLightsMode, '
                 else:
-                    ret.append((ArduinoMessage.get_message(variable, i), 'Reverted {} to {}'.format(variable, v)))
+                    commands=commands+'{}:={}, '.format(variable, v)
             except Exception as exc:
                 print(exc, flush=True)
-                ret.append((-1, 'Failed to revert {} to {}'.format(variable, v)))
-        return ret
+        return self.handle_message(commands[:len(commands)-2])
 
     def __settings(self, command):
         try:
@@ -227,7 +229,15 @@ class DuetMessage:
                     v = c.split(op)
                     ret.append(DuetMessage.__operators[op](self, v[0], v[1]))
             if not op_found and c in DuetMessage.__functions:
-                ret.append(DuetMessage.__function(self, c))
+                res = DuetMessage.__function(self, c)
+                if type(res) is list:
+                    ret.append((256, 'Starting {}'.format(c)))
+                    ret.extend(res)
+                    ret.append((256, 'Ending {}'.format(c)))
+                elif type(res) is tuple and len(res) == 2:
+                    ret.append(res)
+                else:
+                    ret.append((-1, 'Result of function {} is unknown: {}'.format(c, str(res))))
             elif not op_found:
                 ret.append((-1, 'Unknown function named {}'.format(c)))
             i+=1
@@ -281,3 +291,9 @@ class DuetMessage:
 #   ;                       separator between instructions                                                             #
 #                                                                                                                      #
 ########################################################################################################################
+
+if __name__ == '__main__':
+    sv = StoredValues('.storedValuesTest.json')
+    dm = DuetMessage(sv)
+    print(dm.handle_message('*_hue^:=rand, *_saturation^:=255'))
+    print(dm.handle_message('chamber_saturation-=2, revertLights, chamberLightsOff, extruder_saturation:=0'))

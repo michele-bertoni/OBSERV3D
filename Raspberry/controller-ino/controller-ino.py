@@ -84,7 +84,7 @@ if __name__ == "__main__":
                     m = telnetMessages.pop(0)
                     arduinoMessages = duet_message.handle_message(m)
                     for am, log in arduinoMessages:
-                        if am >= 0:
+                        if 0 <= am < 256:
                             ser.write(am.to_bytes(1, "big"))
                         print(log, flush=True)
                 response = requests.get(REQUEST_URL+str(statusType)).json()
