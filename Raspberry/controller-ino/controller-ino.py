@@ -47,7 +47,7 @@ serMessFromStatus = {'C':-1,
 if __name__ == "__main__":
     storedValues = StoredValues(".storedValues.json")
     duet_message = DuetMessage(stored_values=storedValues)
-    #ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
+    ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
     statusType = 2
 
     x=0
