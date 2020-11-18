@@ -25,7 +25,7 @@ try:
     with open(duet_ip_conf_path, 'r') as f:
         DUET_HOST = f.readline().rstrip('\n\r')
 except Exception as e:
-    print(e)
+    print(e, flush=True)
 
 REQUEST_URL = "http://{}/rr_status?type=".format(DUET_HOST)
 
@@ -64,15 +64,15 @@ if __name__ == "__main__":
 
     #TODO: change to non-blocking
     while not isTelnetConnected:
-        print("Connecting to {}...".format(DUET_HOST))
+        print("Connecting to {}...".format(DUET_HOST), flush=True)
         try:
             sock = socket.create_connection((DUET_HOST, 23), timeout=.1)
             time.sleep(4.5)  # RepRapFirmware uses a 4-second ignore period after connecting
             conn = SimpleLineProtocol(sock)
-            print("Connection established.")
+            print("Connection established.", flush=True)
             isTelnetConnected = True
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
             time.sleep(1)
 
     scheduledTime = time.time()
@@ -86,7 +86,7 @@ if __name__ == "__main__":
                     for am, log in arduinoMessages:
                         if am >= 0:
                             ser.write(am.to_bytes(1, "big"))
-                        print(log)
+                        print(log, flush=True)
                 response = requests.get(REQUEST_URL+str(statusType)).json()
                 #TODO: handle status
                 status = response['status']
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 if status != 'P':
                     statusType = 1
             except Exception as e:
-                print(e)
+                print(e, flush=True)
 
             scheduledTime += 0.5
         sleepTime = scheduledTime - time.time()

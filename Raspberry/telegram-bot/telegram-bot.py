@@ -19,7 +19,7 @@ try:
         line = f.readline()
         TOKEN = line.split('\n')[0]
 except IOError:
-    print('API token not found')
+    print('API token not found', flush=True)
 
 COMMANDS = '/start', '/help', '/login', '/logout', 'snap'
 pending_auth = {}
@@ -34,21 +34,21 @@ try:
     with open(duet_ip_conf_path, 'r') as f:
         duet_ip = f.readline().rstrip('\n\r')
 except Exception as e:
-    print(e)
+    print(e, flush=True)
 
 motion_ip = '127.0.0.1:8080'
 try:
     with open(motion_ip_conf_path, 'r') as f:
         motion_ip = f.readline().rstrip('\n\r')
 except Exception as e:
-    print(e)
+    print(e, flush=True)
 
 motion_lastSnap_path = "/var/lib/motion/lastSnap.jpg"
 try:
     with open(motion_files_conf_path, 'r') as f:
         motion_lastSnap_path = f.readline().rstrip('\n\r')
 except Exception as e:
-    print(e)
+    print(e, flush=True)
 
 send_gcode = 'http://{}/rr_gcode?gcode='.format('duet_ip')
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
@@ -60,7 +60,7 @@ def listener(messages):
     for message in messages:
         if (message.content_type != 'text') & (message.text not in COMMANDS):
             # print the sent message to the console
-            print(str(message.chat.first_name) + " " + str(message.chat.last_name) + " [" + str(message.chat.id) + "]: " + message.text)
+            print(str(message.chat.first_name) + " " + str(message.chat.last_name) + " [" + str(message.chat.id) + "]: " + message.text, flush=True)
             bot.send_message(message.chat.id, "Invalid message")
 
 
@@ -151,7 +151,7 @@ def send_snapshot(message):
         with open(motion_lastSnap_path, 'rb') as snap:
             bot.send_photo(message.chat.id, snap)
     except Exception as exc:
-        print(exc)
+        print(exc, flush=True)
         bot.send_message(message.chat.id, "Unable to send snapshot: " + str(exc))
 
 
@@ -165,5 +165,5 @@ def send_help(message):
 
 
 if __name__ == "__main__":
-    print("Printy McPrintface Telegram Bot listening...")
+    print("Printy McPrintface Telegram Bot listening...", flush=True)
     bot.polling()

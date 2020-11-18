@@ -37,7 +37,7 @@ def unregister(chat_id):
                     if line != cid + "\n":
                         newf.write(line)
     except IOError as err:
-        print(err)
+        print(err, flush=True)
         return False
 
     import os

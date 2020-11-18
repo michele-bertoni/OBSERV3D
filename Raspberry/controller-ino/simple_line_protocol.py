@@ -26,7 +26,7 @@ class SimpleLineProtocol:
                 d = self.socket.recv(1024)
             except Exception as sockException:
                 if str(sockException) != 'timed out':
-                    print(sockException)
+                    print(sockException, flush=True)
                 return lines
             if not d:
                 return lines

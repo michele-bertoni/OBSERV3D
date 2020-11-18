@@ -72,7 +72,7 @@ class DuetMessage:
                 variable = variable.split(DuetMessage.__lights_separator)[1]
             return ArduinoMessage.get_message(variable, i), 'Set {} to {}'.format(variable, v)
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
             return -1, 'Failed to set {} to {}'.format(variable, value)
 
     def __increase(self, variable, value):
@@ -94,7 +94,7 @@ class DuetMessage:
                 variable = variable.split(DuetMessage.__lights_separator)[1]
             return ArduinoMessage.get_message(variable, i), 'Increase {} to {}'.format(variable, v)
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
             return -1, 'Failed to increase {} {} times'.format(variable, value)
 
     def __decrease(self, variable, value):
@@ -116,7 +116,7 @@ class DuetMessage:
                 variable = variable.split(DuetMessage.__lights_separator)[1]
             return ArduinoMessage.get_message(variable, i), 'Decrease {} to {}'.format(variable, v)
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
             return -1, 'Failed to decrease {} {} times'.format(variable, value)
 
     __separators = [',', ';']
@@ -143,7 +143,7 @@ class DuetMessage:
                 else:
                     ret.append((ArduinoMessage.get_message(variable, i), 'Reverted {} to {}'.format(variable, v)))
             except Exception as exc:
-                print(exc)
+                print(exc, flush=True)
                 ret.append((-1, 'Failed to revert {} to {}'.format(variable, v)))
         return ret
 
@@ -152,14 +152,14 @@ class DuetMessage:
             getattr(self.stored_values, command+'_values')()
             return ArduinoMessage.get_message(command+'Settings', 0), '{} settings'.format(command)
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
             return -1, 'Failed to {} settings'.format(command)
 
     def __arduino(self, command, value):
         try:
             return ArduinoMessage.get_message(command, value), 'Call {} function with value {}'.format(command, value)
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
             return -1, 'Failed to call {} function with value {}'.format(command, value)
 
 
@@ -195,7 +195,7 @@ class DuetMessage:
                 raise ValueError("Tuple returned with command {} has an unknown number of parameters ({})".format(command, len(f)))
 
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
             return -1, "Failed to call {} command".format(command)
 
     def handle_message(self, message=''):
@@ -281,9 +281,3 @@ class DuetMessage:
 #   ;                       separator between instructions                                                             #
 #                                                                                                                      #
 ########################################################################################################################
-
-if __name__ == '__main__':
-    sv = StoredValues('.storedValuesTest.json')
-    dm = DuetMessage(sv)
-    print(dm.handle_message('*_hue^+=rand, last-=2, extruder_value:=255; chamber_value-=4, chamberLightsOff, chamber_hue-=0'))
-    print(dm.handle_message('last+=3'))

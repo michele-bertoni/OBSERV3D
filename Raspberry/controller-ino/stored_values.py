@@ -139,8 +139,8 @@ class StoredValues:
                 self.extruder_value = data['extruder_value']
 
         except Exception as exc:
-            print(exc)
-            print("Resetting stored values...")
+            print(exc, flush=True)
+            print("Resetting stored values...", flush=True)
             self.store_values()
 
 
@@ -149,7 +149,7 @@ class StoredValues:
             with open(self.__path, 'w') as sv_file:
                 json.dump(self.__dict__, sv_file)
         except Exception as exc:
-            print(exc)
+            print(exc, flush=True)
 
 
     def increment_value(self, attribute_name, increment, is_reversible=False):
