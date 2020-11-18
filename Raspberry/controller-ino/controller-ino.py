@@ -66,15 +66,14 @@ if __name__ == "__main__":
     while not isTelnetConnected:
         print("Connecting to {}...".format(DUET_HOST))
         try:
-            sock = socket.create_connection((DUET_HOST, 23), timeout=1)
+            sock = socket.create_connection((DUET_HOST, 23), timeout=.1)
+            time.sleep(4.5)  # RepRapFirmware uses a 4-second ignore period after connecting
+            conn = SimpleLineProtocol(sock)
+            print("Connection established.")
             isTelnetConnected = True
         except Exception as exc:
             print(exc)
-
-    sock.settimeout(.1)
-    time.sleep(4.5)  # RepRapFirmware uses a 4-second ignore period after connecting
-    conn = SimpleLineProtocol(sock)
-    print("Connection established.")
+            time.sleep(1)
 
     scheduledTime = time.time()
     while not path.exists(UPDATING_PATH):
