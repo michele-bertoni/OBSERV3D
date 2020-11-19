@@ -61,6 +61,7 @@ if __name__ == "__main__":
     dtb=0
 
     isTelnetConnected = False
+    isDisconnected = False
 
     #TODO: change to non-blocking
     while not isTelnetConnected:
@@ -76,7 +77,7 @@ if __name__ == "__main__":
             time.sleep(1)
 
     scheduledTime = time.time()
-    while not path.exists(UPDATING_PATH):
+    while not path.exists(UPDATING_PATH) and not isDisconnected:
         if time.time() >= scheduledTime:
             try:
                 telnetMessages = conn.read_lines()
@@ -100,11 +101,16 @@ if __name__ == "__main__":
                     statusType = 1
             except Exception as e:
                 print(e, flush=True)
+                isDisconnected = True
 
             scheduledTime += 0.5
         sleepTime = scheduledTime - time.time()
         if sleepTime > 0:
             time.sleep(sleepTime)
 
-    ser.write(serMessFromStatus['F'].to_bytes(1, "big"))
+    if not isDisconnected:
+        ser.write(serMessFromStatus['F'].to_bytes(1, "big"))
+    else:
+        ser.write((0).to_bytes(1, "big"))
+        ser.write((2).to_bytes(1, "big"))
     ser.close()
