@@ -7,6 +7,7 @@
 ###################################################################################################
 
 from stored_values import StoredValues
+import subprocess
 
 class ArduinoMessage:
     __messages = {
@@ -164,6 +165,14 @@ class DuetMessage:
             print(exc, flush=True)
             return -1, 'Failed to call {} function with value {}'.format(command, value)
 
+    def __update(self):
+        try:
+            subprocess.Popen('/home/pi/Printy-McPrintface/Raspberry/git-pull/git-pull.sh')
+            return 256, 'Performing update, if any'
+        except Exception as exc:
+            print(exc)
+            return -1, 'Could not check for updates'
+
 
     __functions = {
         "chamberLightsOff": (__assign, 'chamberLights', 0),
@@ -181,7 +190,8 @@ class DuetMessage:
         "keepRaspberryOn": (__arduino, 'keepRaspberryOn', 1),
         "keepRaspberryOff": (__arduino, 'keepRaspberryOn', 0),
         "chamber": (__arduino, 'chamber', 0),
-        "extruder": (__arduino, 'extruder', 0)
+        "extruder": (__arduino, 'extruder', 0),
+        "update": (__update,)
     }
 
     def __function(self, command):
@@ -211,7 +221,7 @@ class DuetMessage:
         lights = ''
         i=0
         for c in commands:
-            if c.startswith(self.__anyLight_modifier+self.__lights_separator):
+            if c.startswith(self.__anyLight_modifier):
                 first_light = (lights, 'chamber')[lights=='']
                 second_light = ('chamber', 'extruder')[first_light=='chamber']
                 commands.insert(i+1, c.replace(self.__anyLight_modifier, second_light))
@@ -285,6 +295,7 @@ class DuetMessage:
 #   keepRaspberryOff        keep raspberry off when duet is off                                                        #
 #   chamber                 following operations will update chamber HSV                                               #
 #   extruder                following operations will update extruder HSV                                              #
+#   update                  run git-pull script for updating code                                                      #
 #                                                                                                                      #
 # Separators:                                                                                                          #
 #   ,                       separator between instructions                                                             #
@@ -296,4 +307,4 @@ if __name__ == '__main__':
     sv = StoredValues('.storedValuesTest.json')
     dm = DuetMessage(sv)
     print(dm.handle_message('*_hue^:=rand, *_saturation^:=255'))
-    print(dm.handle_message('chamber_saturation-=2, revertLights, chamberLightsOff, extruder_saturation:=0'))
+    print(dm.handle_message('chamber_saturation-=2, revertLights, chamberLightsOff, extruder_saturation:=0, *LightsOff, update'))
