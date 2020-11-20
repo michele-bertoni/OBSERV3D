@@ -96,7 +96,6 @@ if __name__ == "__main__":
             scheduledTime += 0.5
         sleepTime = scheduledTime - time.time()
         if sleepTime > 0:
-            print(sleepTime)
             time.sleep(sleepTime)
         else:
             print('System slowing: it took {} seconds more than expected!'.format(-sleepTime), flush=True)
