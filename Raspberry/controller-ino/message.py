@@ -173,6 +173,9 @@ class DuetMessage:
             print(exc)
             return -1, 'Could not check for updates'
 
+    def __pass(self):
+        return 256, 'ok'
+
 
     __functions = {
         "chamberLightsOff": (__assign, 'chamberLights', 0),
@@ -191,7 +194,8 @@ class DuetMessage:
         "keepRaspberryOff": (__arduino, 'keepRaspberryOn', 0),
         "chamber": (__arduino, 'chamber', 0),
         "extruder": (__arduino, 'extruder', 0),
-        "update": (__update,)
+        "update": (__update,),
+        "ok": (__pass,)
     }
 
     def __function(self, command):
@@ -296,6 +300,7 @@ class DuetMessage:
 #   chamber                 following operations will update chamber HSV                                               #
 #   extruder                following operations will update extruder HSV                                              #
 #   update                  run git-pull script for updating code                                                      #
+#   ok                      skip                                                                                       #
 #                                                                                                                      #
 # Separators:                                                                                                          #
 #   ,                       separator between instructions                                                             #
