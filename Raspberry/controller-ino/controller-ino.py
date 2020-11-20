@@ -47,7 +47,7 @@ if __name__ == "__main__":
     storedValues = StoredValues(".storedValues.json")
     duet_message = DuetMessage(stored_values=storedValues)
     ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
-    connections = [Connection(DUET_HOST, 23, 'DUET', 0.0, 4.5)]
+    connections = [Connection(DUET_HOST, 23, 'DUET', 0.1, 4.5)]
     statusType = 2
 
     x=0
