@@ -7,11 +7,10 @@
 ###################################################################################################
 
 import os.path as path
-import socket
 import time
 import requests
 import serial
-from simple_line_protocol import SimpleLineProtocol
+from connections import Connection
 from stored_values import StoredValues
 from message import DuetMessage
 
@@ -48,6 +47,7 @@ if __name__ == "__main__":
     storedValues = StoredValues(".storedValues.json")
     duet_message = DuetMessage(stored_values=storedValues)
     ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
+    connections = [Connection(DUET_HOST, 23, 'DUET', 0.0, 4.5)]
     statusType = 2
 
     x=0
@@ -60,34 +60,22 @@ if __name__ == "__main__":
     dtc=0
     dtb=0
 
-    isTelnetConnected = False
     isDisconnected = False
-
-    #TODO: change to non-blocking
-    while not isTelnetConnected:
-        print("Connecting to {}...".format(DUET_HOST), flush=True)
-        try:
-            sock = socket.create_connection((DUET_HOST, 23), timeout=.1)
-            time.sleep(4.5)  # RepRapFirmware uses a 4-second ignore period after connecting
-            conn = SimpleLineProtocol(sock)
-            print("Connection established.", flush=True)
-            isTelnetConnected = True
-        except Exception as exc:
-            print(exc, flush=True)
-            time.sleep(1)
 
     scheduledTime = time.time()
     while not path.exists(UPDATING_PATH) and not isDisconnected:
         if time.time() >= scheduledTime:
             try:
-                telnetMessages = conn.read_lines()
-                while len(telnetMessages) > 0:
-                    m = telnetMessages.pop(0)
-                    arduinoMessages = duet_message.handle_message(m)
-                    for am, log in arduinoMessages:
-                        if 0 <= am < 256:
-                            ser.write(am.to_bytes(1, "big"))
-                        print(log, flush=True)
+                for conn in connections:
+                    for m in conn.handle_connection():
+                        arduinoMessages = duet_message.handle_message(m)
+                        for am, log in arduinoMessages:
+                            if 0 <= am < 256:
+                                ser.write(am.to_bytes(1, "big"))
+                            elif am < 0:
+                                conn.queue_message(log)
+                            print(log, flush=True)
+
                 response = requests.get(REQUEST_URL+str(statusType)).json()
                 #TODO: handle status
                 status = response['status']
@@ -107,6 +95,8 @@ if __name__ == "__main__":
         sleepTime = scheduledTime - time.time()
         if sleepTime > 0:
             time.sleep(sleepTime)
+        else:
+            print('System slowing: it took {} seconds more than expected!'.format(-sleepTime), flush=True)
 
     if not isDisconnected:
         ser.write(serMessFromStatus['F'].to_bytes(1, "big"))
