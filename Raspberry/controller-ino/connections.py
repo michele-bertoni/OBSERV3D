@@ -49,7 +49,7 @@ class Connection:
     def __connect(self):
         try:
             print("Trying to connect to {}:{}".format(self.address, self.port), flush=True)
-            self.__socket = socket.create_connection((self.address, self.port), timeout=self.timeout)
+            self.__socket = socket.create_connection((self.address, self.port), self.timeout)
             self.__state = self.__IGNORE
             self.__connected_time = time.time()
             print("Connected, starting ignore period ({} seconds)".format(self.ignore_period), flush=True)
@@ -60,10 +60,10 @@ class Connection:
 
     def __ignore(self):
         if self.__connected_time>0.0 and time.time()>=self.__connected_time+self.ignore_period:
-            self.set_timeout(.1)
+            self.set_timeout(0.1)
             self.__lineProtocol = SocketLineProtocol(self.__socket)
             self.__state = self.__CONNECTED
-        print("Connection ready, starting read/write process", flush=True)
+            print("Connection ready, starting read/write process", flush=True)
         return []
 
     def __read_write(self):
@@ -91,7 +91,7 @@ class Connection:
         'DUET': 'M291 S1 T10 R"ERROR!" P"{}"'
     }
 
-    def __init__(self, address, port, host_type='DUET', timeout=0.0, ignore_period=0.0):
+    def __init__(self, address, port, host_type='DUET', timeout=0.1, ignore_period=0.0):
         self.address = address
         self.port = port
         self.host_type = host_type
@@ -112,4 +112,5 @@ class Connection:
             self.__out_queue.append(self.__out_message_format.get(self.host_type, "{}").format(out_message))
 
     def set_timeout(self, timeout=.1):
-        self.__socket.settimeout(timeout=timeout)
+        self.timeout = timeout
+        self.__socket.settimeout(timeout)
