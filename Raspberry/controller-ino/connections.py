@@ -87,7 +87,7 @@ class Connection:
     }
 
     __out_message_format = {
-        'DUET': 'M291 S1 T10 R\"ERROR\" P\"{}\"'
+        'DUET': 'M117 {}'
     }
 
     def __init__(self, address, port, host_type='DUET', timeout=0.1, ignore_period=0.0):
