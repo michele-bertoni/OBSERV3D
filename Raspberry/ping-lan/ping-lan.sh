@@ -25,25 +25,28 @@ exec > >(tee /home/pi/Printy-McPrintface/Raspberry/ping-lan/log.txt)
 # Redirect stderr to stdout
 exec 2>&1
 
-# Verbose mode
-set -x
+# Print date and time
+date +"Date : %d/%m/%Y Time : %H.%M.%S"
 
-# Wait 20 seconds
-sleep 20
+# Wait 10 seconds
+echo "Wait 10 seconds"
+sleep 10
 
 c=0
 while true; do
-  # Ping 2 times extender router
-  ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)"
+  date +"Date : %d/%m/%Y Time : %H.%M.%S"
+
+  # Ping 3 times extender router
+  ping -c 3 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)" > /dev/null
 
   # If at least 1 ping was successful
   if [[ "$?" -eq "0" ]]; then
-    # Ping 2 times the gateway
-    ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)"
+    # Ping 3 times the gateway
+    ping -c 3 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)" > /dev/null
 
     # If at least 1 ping was successful
     if [[ "$?" -eq "0" ]]; then
-      ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/wan_ip.conf)"
+      ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/wan_ip.conf)" > /dev/null
 
       # If WAN is not accessible
       if [[ "$?" -ne "0" ]]; then
