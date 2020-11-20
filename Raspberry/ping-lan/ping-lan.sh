@@ -34,7 +34,7 @@ sleep 10
 
 c=0
 while true; do
-  date +"Date : %d/%m/%Y Time : %H.%M.%S"
+  #date +"Date : %d/%m/%Y Time : %H.%M.%S"
 
   # Ping 3 times extender router
   ping -c 3 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)" > /dev/null
@@ -50,10 +50,12 @@ while true; do
 
       # If WAN is not accessible
       if [[ "$?" -ne "0" ]]; then
+        date +"Date : %d/%m/%Y Time : %H.%M.%S"
         echo "Can't ping WAN"
       fi
     # No pings to the gateway were successful
     else
+        date +"Date : %d/%m/%Y Time : %H.%M.%S"
         echo "Extender disconnected from gateway, need reboot"
     fi
   # No pings to the extender were successful
@@ -61,6 +63,7 @@ while true; do
     c=$((c+1))
 
     if [[ "$c" -lt "3" ]]; then
+      date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, restoring"
       sudo ifconfig eth0 down
       sleep 1
