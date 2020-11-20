@@ -48,7 +48,7 @@ if __name__ == "__main__":
     duet_message = DuetMessage(stored_values=storedValues)
     ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
     connections = [
-        Connection(address=DUET_HOST, port=23, host_type='DUET', timeout=1.0, ignore_period=4.5)
+        Connection(address=DUET_HOST, port=23, host_type='DUET', timeout=0.1, ignore_period=4.5)
     ]
     statusType = 2
 

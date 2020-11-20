@@ -60,7 +60,6 @@ class Connection:
 
     def __ignore(self):
         if self.__connected_time>0.0 and time.time()>=self.__connected_time+self.ignore_period:
-            self.set_timeout(0.1)
             self.__lineProtocol = SocketLineProtocol(self.__socket)
             self.__state = self.__CONNECTED
             print("Connection ready, starting read/write process", flush=True)
