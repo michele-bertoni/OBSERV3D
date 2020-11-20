@@ -31,16 +31,41 @@ set -x
 # Wait 20 seconds
 sleep 20
 
-# Ping 10 times an always on device
-ping -c 10 192.168.0.1
+c=0
+while true; do
+  # Ping 2 times extender router
+  ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)"
 
-# If none of the pings was successfull, try another ip
-if [ "$?" -ne "0" ]; then
-  # Ping 10 times another always on device
-  ping -c 2 192.168.1.1
+  # If at least 1 ping was successful
+  if [[ "$?" -eq "0" ]]; then
+    # Ping 2 times the gateway
+    ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)"
 
-  # If none of the pings was successfull, reboot
-  if [ "$?" -ne "0" ]; then
-    sudo reboot
+    # If at least 1 ping was successful
+    if [[ "$?" -eq "0" ]]; then
+      ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/wan_ip.conf)"
+
+      # If WAN is not accessible
+      if [[ "$?" -ne "0" ]]; then
+        echo "Can't ping WAN"
+      fi
+    # No pings to the gateway were successful
+    else
+        echo "Extender disconnected from gateway, need reboot"
+    fi
+  # No pings to the extender were successful
+  else
+    c=$((c+1))
+
+    if [[ "$c" -lt "3" ]]; then
+      echo "Extender unreachable, restoring"
+      sudo ifconfig eth0 down
+      sleep 1
+      sudo ifconfig eth0 up
+    else
+      sudo reboot
+    fi
   fi
-fi
+
+  sleep 5
+done
