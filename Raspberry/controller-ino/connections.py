@@ -108,9 +108,7 @@ class Connection:
 
     def queue_message(self, out_message=''):
         if len(out_message) > 0:
-            m = self.__out_message_format.get(self.host_type, "{}").format(out_message)
-            print(m)
-            self.__out_queue.append(m)
+            self.__out_queue.append(self.__out_message_format.get(self.host_type, "{}").format(out_message))
 
     def set_timeout(self, timeout=.1):
         self.timeout = timeout
