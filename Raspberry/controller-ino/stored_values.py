@@ -95,6 +95,8 @@ class StoredValues:
         "fadingMode":           Range([i for i in range(32)])
     }
 
+    RANDOM = 'rand'
+
 
     def __init__(self, sv_path, load_from_file=True):
         self.__path = sv_path
@@ -184,7 +186,13 @@ class StoredValues:
         if is_reversible:
             self.reversibleChanges[attribute_name] = getattr(self, attribute_name)
 
-        v = rng.closest(value)
+        if value in self.__dict__:
+            v = rng.closest(self.__dict__[value])
+        elif value == self.RANDOM:
+            v = rng.rand()
+        else:
+            v = rng.closest(int(value))
+
         setattr(self, attribute_name, v)
 
         return rng.index(v), v

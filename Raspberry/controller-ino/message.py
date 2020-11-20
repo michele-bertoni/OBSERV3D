@@ -62,11 +62,6 @@ class DuetMessage:
             if variable == 'last':
                 variable = self.last_var
 
-            if value == 'rand':
-                value = self.stored_values.get_random(variable)
-            else:
-                value = int(value)
-
             i, v = self.stored_values.set_value(variable, value, is_reversible=needs_backup)
             self.last_var = variable
             if DuetMessage.__lights_separator in variable:
@@ -86,7 +81,7 @@ class DuetMessage:
             if variable == 'last':
                 variable = self.last_var
 
-            if value == 'rand':
+            if value == self.__random:
                 return self.__assign(variable, value)
 
             i, v = self.stored_values.increment_value(variable, int(value), is_reversible=needs_backup)
@@ -108,7 +103,7 @@ class DuetMessage:
             if variable == 'last':
                 variable = self.last_var
 
-            if value == 'rand':
+            if value == self.__random:
                 return self.__assign(variable, value)
 
             i, v = self.stored_values.increment_value(variable, -int(value), is_reversible=needs_backup)
@@ -133,6 +128,8 @@ class DuetMessage:
     __anyLight_modifier = '*'
 
     __lights_separator = '_'
+
+    __random = StoredValues.RANDOM
 
     def __revert_lights(self):
         commands = ''
@@ -226,9 +223,15 @@ class DuetMessage:
         i=0
         for c in commands:
             if c.startswith(self.__anyLight_modifier):
-                first_light = (lights, 'chamber')[lights=='']
-                second_light = ('chamber', 'extruder')[first_light=='chamber']
-                commands.insert(i+1, c.replace(self.__anyLight_modifier, second_light))
+                first_light = (lights, 'chamber')[lights == '']
+                second_light = ('chamber', 'extruder')[first_light == 'chamber']
+
+                if c.endswith([*self.__operators][0]+self.__random):
+                    new_c = c.replace(self.__anyLight_modifier, second_light)
+                    new_c = new_c[:len(new_c)-len(self.__random)]+c.split([*self.__operators][0]+self.__random)[0].replace('^', '')
+                    commands.insert(i + 1, new_c.replace(self.__anyLight_modifier, first_light))
+                else:
+                    commands.insert(i+1, c.replace(self.__anyLight_modifier, second_light))
                 c = c.replace(self.__anyLight_modifier, first_light)
 
             op_found = False
@@ -308,8 +311,3 @@ class DuetMessage:
 #                                                                                                                      #
 ########################################################################################################################
 
-if __name__ == '__main__':
-    sv = StoredValues('.storedValuesTest.json')
-    dm = DuetMessage(sv)
-    print(dm.handle_message('*_hue^:=rand, *_saturation^:=255'))
-    print(dm.handle_message('chamber_saturation-=2, revertLights, chamberLightsOff, extruder_saturation:=0, *LightsOff, update'))
