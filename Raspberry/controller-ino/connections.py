@@ -48,6 +48,7 @@ class Connection:
 
     def __connect(self):
         try:
+            print("Trying to connect to {}:{}".format(self.address, self.port), flush=True)
             self.__socket = socket.create_connection((self.address, self.port), timeout=self.timeout)
             self.__state = self.__IGNORE
             self.__connected_time = time.time()
@@ -59,6 +60,7 @@ class Connection:
 
     def __ignore(self):
         if self.__connected_time>0.0 and time.time()>=self.__connected_time+self.ignore_period:
+            self.set_timeout(.1)
             self.__lineProtocol = SocketLineProtocol(self.__socket)
             self.__state = self.__CONNECTED
         print("Connection ready, starting read/write process", flush=True)
@@ -108,3 +110,6 @@ class Connection:
     def queue_message(self, out_message=''):
         if len(out_message) > 0:
             self.__out_queue.append(self.__out_message_format.get(self.host_type, "{}").format(out_message))
+
+    def set_timeout(self, timeout=.1):
+        self.__socket.settimeout(timeout=timeout)
