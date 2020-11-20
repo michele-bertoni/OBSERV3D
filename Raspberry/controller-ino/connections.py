@@ -17,7 +17,7 @@ class SocketLineProtocol:
 
     def write(self, msg):
         msg = msg.strip()
-        msg += '\r'
+        msg += '\n'
         self.socket.sendall(msg.encode())
 
     def read_lines(self):
@@ -108,7 +108,9 @@ class Connection:
 
     def queue_message(self, out_message=''):
         if len(out_message) > 0:
-            self.__out_queue.append(self.__out_message_format.get(self.host_type, "{}").format(out_message))
+            m = self.__out_message_format.get(self.host_type, "{}").format(out_message)
+            print(m)
+            self.__out_queue.append(m)
 
     def set_timeout(self, timeout=.1):
         self.timeout = timeout
