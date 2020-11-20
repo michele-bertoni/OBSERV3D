@@ -25,9 +25,10 @@ class SocketLineProtocol:
         while self.NEWLINE not in self.buffer:
             try:
                 d = self.socket.recv(1024)
-            except OSError as sockException:
-                if str(sockException) != 'timed out':
-                    print(sockException, flush=True)
+            except OSError as exc:
+                if str(exc)!='timed out' and '[Errno 115]' not in str(exc):
+                    print(exc, flush=True)
+                    raise exc
                 return lines
             if not d:
                 return lines
