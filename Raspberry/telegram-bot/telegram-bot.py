@@ -27,7 +27,7 @@ except IOError:
 COMMANDS = '/start', '/help', '/login', '/logout', 'snap'
 pending_auth = {}
 
-conf_path = "/home/pi/Printy-McPrintface/Raspberry/.conf/"
+conf_path = "/home/pi/Printy-McPrintface/Raspberry/.config/"
 duet_ip_conf_path = conf_path + "duet_ip.conf"
 motion_ip_conf_path = conf_path + "motion_ip.conf"
 socket_port_conf_path = conf_path + "telegram-bot_socket_port.conf"
