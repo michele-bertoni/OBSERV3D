@@ -38,5 +38,5 @@ cd /home/pi/Printy-McPrintface/Raspberry/telegram-bot/
 while true; do
     # Wait 10 second for net to be established
     sleep 10
-    python3.9 telegram-bot.py
+    /usr/local/bin/python3.9 telegram-bot.py
 done
