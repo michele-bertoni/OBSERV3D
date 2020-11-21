@@ -18,11 +18,19 @@ UPDATING_PATH = "/home/pi/Printy-McPrintface/Raspberry/git-pull/.updating"
 
 conf_path = "/home/pi/Printy-McPrintface/Raspberry/.config/"
 duet_ip_conf_path = conf_path + "duet_ip.conf"
+socket_port_conf_path = conf_path + "telegram-bot_socket_port.conf"
 
 DUET_HOST = "192.168.0.3"
 try:
     with open(duet_ip_conf_path, 'r') as f:
         DUET_HOST = f.readline().rstrip('\n\r')
+except Exception as e:
+    print(e, flush=True)
+
+socket_port = 6126
+try:
+    with open(socket_port_conf_path, 'r') as f:
+        socket_port = int(f.readline().rstrip('\n\r'))
 except Exception as e:
     print(e, flush=True)
 
@@ -48,7 +56,8 @@ if __name__ == "__main__":
     duet_message = DuetMessage(stored_values=storedValues)
     ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE, timeout=.1)
     connections = [
-        Connection(address=DUET_HOST, port=23, host_type='DUET', timeout=0.1, ignore_period=4.5)
+        Connection(address=DUET_HOST, port=23, host_type='DUET', timeout=0.1, ignore_period=4.5),
+        Connection(address='127.0.0.1', port=socket_port, host_type='TELEBOT', timeout=0.1, ignore_period=0.0)
     ]
     statusType = 2
 
@@ -70,13 +79,19 @@ if __name__ == "__main__":
             try:
                 for conn in connections:
                     for m in conn.handle_connection():
+                        response = ''
                         arduinoMessages = duet_message.handle_message(m)
                         for am, log in arduinoMessages:
                             if 0 <= am < 256:
                                 ser.write(am.to_bytes(1, "big"))
-                            elif am < 0:
-                                conn.queue_message(log)
+                            elif am < 0 or am == 257:
+                                response += log + ', '
                             print(log, flush=True)
+                        if len(response) <= 0:
+                            response = 'ok'
+                        else:
+                            response = response[:len(response)-2]
+                        conn.queue_message(response)
 
                 response = requests.get(REQUEST_URL+str(statusType)).json()
                 #TODO: handle status

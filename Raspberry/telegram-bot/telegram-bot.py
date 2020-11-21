@@ -7,11 +7,14 @@
 ###################################################################################################
 
 import time
-
+import socket
 import requests
 import telebot
 
+import colorsys
+
 import authentication as auth
+from connections_server import SocketServerLineProtocol
 
 TOKEN = ""
 try:
@@ -27,6 +30,7 @@ pending_auth = {}
 conf_path = "/home/pi/Printy-McPrintface/Raspberry/.conf/"
 duet_ip_conf_path = conf_path + "duet_ip.conf"
 motion_ip_conf_path = conf_path + "motion_ip.conf"
+socket_port_conf_path = conf_path + "telegram-bot_socket_port.conf"
 motion_files_conf_path = conf_path + "motion_snap_path.conf"
 
 duet_ip = '192.168.0.3'
@@ -43,6 +47,13 @@ try:
 except Exception as e:
     print(e, flush=True)
 
+socket_port = 6126
+try:
+    with open(socket_port_conf_path, 'r') as f:
+        socket_port = int(f.readline().rstrip('\n\r'))
+except Exception as e:
+    print(e, flush=True)
+
 motion_lastSnap_path = "/var/lib/motion/lastSnap.jpg"
 try:
     with open(motion_files_conf_path, 'r') as f:
@@ -53,20 +64,10 @@ except Exception as e:
 send_gcode = 'http://{}/rr_gcode?gcode='.format('duet_ip')
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
 
-def listener(messages):
-    """
-    When new messages arrive TeleBot will call this function.
-    """
-    for message in messages:
-        if (message.content_type != 'text') & (message.text not in COMMANDS):
-            # print the sent message to the console
-            print(str(message.chat.first_name) + " " + str(message.chat.last_name) + " [" + str(message.chat.id) + "]: " + message.text, flush=True)
-            bot.send_message(message.chat.id, "Invalid message")
-
+sock = socket.create_server(('127.0.0.1', socket_port))
+conn = None
 
 bot = telebot.TeleBot(TOKEN)
-bot.set_update_listener(listener)
-
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -154,6 +155,25 @@ def send_snapshot(message):
         print(exc, flush=True)
         bot.send_message(message.chat.id, "Unable to send snapshot: " + str(exc))
 
+@bot.message_handler(regexp="^#[0-9a-fA-F]{6}([ ]{1}[a-z]*)?$")
+def color(message):
+    if not auth.authentication(message.chat.id):
+        bot.send_message(message.chat.id, "Authentication failed: /login")
+        return
+
+    commands = message.text.split(' ')
+    hsv_color = colorsys.rgb_to_hsv(int(commands[0][1:3], 16), int(commands[0][3:5], 16), int(commands[0][5:7], 16))
+    hsv_color = (round(hsv_color[0]*255), round(hsv_color[1]*255), round(hsv_color[2]))
+    lights = '*'
+    if len(commands)==2 and (commands[1] == 'chamber' or commands[1] == 'extruder'):
+        lights = commands[1]
+    conn.write('{}_hue:={}, {}_saturation:={}, {}_value:={}'.format(lights, hsv_color[0],
+                                                                    lights, hsv_color[1],
+                                                                    lights, hsv_color[2]))
+    response = conn.read_line()
+    bot.send_message(message.chat.id, 'H:{}, S:{}, V:{}'.format(hsv_color[0], hsv_color[1], hsv_color[2]))
+
+
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
@@ -161,9 +181,24 @@ def send_help(message):
 
                      "/login - Authenticate your Telegram account\n" +
                      "/logout - Unregister your Telegram account\n" +
-                     "/snap - Request live snapshot of the printer")
+                     "/snap - Request live snapshot of the printer\n"+
+                     "#xxxxxx - Set led color to the given hex color\n"+
+                     "#xxxxxx chamber - Set chamber led color\n" +
+                     "#xxxxxx extruder - Set extruder led color\n")
+
+# Default command handler. A lambda expression which always returns True is used for this purpose.
+@bot.message_handler(func=lambda message: True, content_types=['audio', 'video', 'document', 'text', 'location', 'contact', 'sticker'])
+def default_command(message):
+    bot.reply_to(message, "Unknown message")
+    send_help(message)
+
 
 
 if __name__ == "__main__":
+    print("Socket listening on 127.0.0.1:{}".format(socket_port))
+    sock.listen()
+    conn = SocketServerLineProtocol(sock.accept()[0])
     print("Printy McPrintface Telegram Bot listening...", flush=True)
     bot.polling()
+    while True:
+        time.sleep(1)
