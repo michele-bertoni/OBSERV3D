@@ -149,7 +149,7 @@ def send_snapshot(message):
         requests.get(send_request_snapshot)
         time.sleep(1)
 
-        with open(motion_lastSnap_path, 'rb') as snap:
+        with open(motion_lastSnap_path+'lastsnap.jpg', 'rb') as snap:
             bot.send_photo(message.chat.id, snap)
     except Exception as exc:
         print(exc, flush=True)

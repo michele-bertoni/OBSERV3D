@@ -26,7 +26,7 @@ class SocketServerLineProtocol:
             try:
                 d = self.socket.recv(1024)
             except OSError as exc:
-                if str(exc)!='timed out' and '[Errno 115]' not in str(exc):
+                if 'timed out' not in str(exc) and '[Errno 115]' not in str(exc):
                     raise exc
                 return lines
             self.buffer = self.buffer + d
