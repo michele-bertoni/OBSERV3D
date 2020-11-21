@@ -9,7 +9,7 @@
 import socket
 
 class SocketServerLineProtocol:
-    def __init__(self, soc, timeout=5.0):
+    def __init__(self, soc, timeout=30.0):
         self.socket = soc
         self.buffer = b''
         self.NEWLINE = b'\n'
