@@ -87,7 +87,7 @@ if __name__ == "__main__":
                             elif am < 0 or am == 257:
                                 response += log + ', '
                             print(log, flush=True)
-                        if len(response) <= 0:
+                        if len(response) <= 0 and conn.host_type=='TELEBOT':
                             response = 'ok'
                         else:
                             response = response[:len(response)-2]
