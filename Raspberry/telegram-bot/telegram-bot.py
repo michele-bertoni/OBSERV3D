@@ -167,11 +167,16 @@ def color(message):
     lights = '*'
     if len(commands)==2 and (commands[1] == 'chamber' or commands[1] == 'extruder'):
         lights = commands[1]
-    conn.write('{}_hue:={}, {}_saturation:={}, {}_value:={}'.format(lights, hsv_color[0],
-                                                                    lights, hsv_color[1],
-                                                                    lights, hsv_color[2]))
+
+    if lights == '*':
+        conn.write('{}_hue:={}, {}_saturation:={}'.format(lights, hsv_color[0],
+                                                          lights, hsv_color[1]))
+    else:
+        conn.write('{}_hue:={}, {}_saturation:={}, {}_value:={}'.format(lights, hsv_color[0],
+                                                                        lights, hsv_color[1],
+                                                                        lights, hsv_color[2]))
     response = conn.read_line()
-    bot.send_message(message.chat.id, 'H:{}, S:{}, V:{}'.format(hsv_color[0], hsv_color[1], hsv_color[2]))
+    bot.send_message(response)
 
 
 
