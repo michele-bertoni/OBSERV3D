@@ -78,17 +78,17 @@ def send_welcome(message):
 @bot.message_handler(commands=['login'])
 def register(message):
     if auth.authentication(message.chat.id):
-        bot.send_message(message.chat.id, "Already authenticated")
+        bot.reply_to(message, "Already authenticated")
         return
 
     if message.chat.id in pending_auth:
-        bot.send_message(message.chat.id, "Other authentication pending")
+        bot.reply_to(message, "Other authentication pending")
         return
 
     reply_text = "Send me the OTP displayed by the printer \n({} seconds left)"
 
     i = 60
-    reply = bot.send_message(message.chat.id, reply_text.format(i))
+    reply = bot.reply_to(message, reply_text.format(i))
 
     pending_auth[message.chat.id] = auth.generate_otp()
     requests.get(
@@ -115,14 +115,14 @@ def register(message):
 @bot.message_handler(func=lambda message: message.chat.id in pending_auth)
 def msg_image_select(message):
     if auth.authentication(message.chat.id):
-        bot.send_message(message.chat.id, "Already authenticated")
+        bot.reply_to(message, "Already authenticated")
         return
     try:
         if message.chat.id in pending_auth and pending_auth[message.chat.id] == message.text:
-            bot.send_message(message.chat.id, "Authenticated")
+            bot.reply_to(message, "Authenticated")
             auth.register(message.chat.id)
         else:
-            bot.send_message(message.chat.id, "Authentication failed, try again")
+            bot.reply_to(message, "Authentication failed, try again")
     except KeyError:
         pass
 
@@ -130,19 +130,19 @@ def msg_image_select(message):
 @bot.message_handler(commands=['logout'])
 def unregister(message):
     if not auth.authentication(message.chat.id):
-        bot.send_message(message.chat.id, "Authentication failed: /login")
+        bot.reply_to(message, "Authentication failed: /login")
         return
 
     if auth.unregister(message.chat.id) and not auth.authentication(message.chat.id):
-        bot.send_message(message.chat.id, "Unregistered correctly")
+        bot.reply_to(message, "Unregistered correctly")
     else:
-        bot.send_message(message.chat.id, "De-authentication failed")
+        bot.reply_to(message, "De-authentication failed")
 
 
 @bot.message_handler(commands=['snap'])
 def send_snapshot(message):
     if not auth.authentication(message.chat.id):
-        bot.send_message(message.chat.id, "Authentication failed: /login")
+        bot.reply_to(message, "Authentication failed: /login")
         return
 
     try:
@@ -153,7 +153,7 @@ def send_snapshot(message):
             bot.send_photo(message.chat.id, snap)
     except Exception as exc:
         print(exc, flush=True)
-        bot.send_message(message.chat.id, "Unable to send snapshot: " + str(exc))
+        bot.reply_to(message, "Unable to send snapshot: " + str(exc))
 
 @bot.message_handler(regexp="^#[0-9a-fA-F]{6}([ ]{1}[a-z]*)?$")
 def color(message):
@@ -176,7 +176,7 @@ def color(message):
                                                                         lights, hsv_color[1],
                                                                         lights, hsv_color[2]))
     response = conn.read_line()
-    bot.send_message(message.chat.id, response)
+    bot.reply_to(message, response)
 
 
 
