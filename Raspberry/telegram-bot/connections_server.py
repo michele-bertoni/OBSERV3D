@@ -40,7 +40,12 @@ class SocketServerLineProtocol:
 
     def read_line(self):
         while self.NEWLINE not in self.buffer:
-            d = self.socket.recv(1024)
+            try:
+                d = self.socket.recv(1024)
+            except OSError as exc:
+                if 'timed out' not in str(exc) and '[Errno 115]' not in str(exc):
+                    raise exc
+                return str(exc)
             self.buffer = self.buffer + d
 
         i = self.buffer.find(self.NEWLINE)
