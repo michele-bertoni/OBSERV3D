@@ -61,7 +61,7 @@ try:
 except Exception as e:
     print(e, flush=True)
 
-send_gcode = 'http://{}/rr_gcode?gcode='.format('duet_ip')
+send_gcode = 'http://{}/rr_gcode?gcode='.format(duet_ip)
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
 
 sock = socket.create_server(('127.0.0.1', socket_port))
