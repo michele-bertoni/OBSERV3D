@@ -176,7 +176,7 @@ def color(message):
                                                                         lights, hsv_color[1],
                                                                         lights, hsv_color[2]))
     response = conn.read_line()
-    bot.send_message(response)
+    bot.send_message(message.chat.id, response)
 
 
 
