@@ -17,7 +17,7 @@ class SocketLineProtocol:
 
     def write(self, msg):
         msg = msg.strip()
-        msg += '\n'
+        msg += '\r'
         self.socket.sendall(msg.encode())
 
     def read_lines(self):

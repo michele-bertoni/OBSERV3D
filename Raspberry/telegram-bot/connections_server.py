@@ -12,12 +12,12 @@ class SocketServerLineProtocol:
     def __init__(self, soc, timeout=30.0):
         self.socket = soc
         self.buffer = b''
-        self.NEWLINE = b'\n'
+        self.NEWLINE = b'\r'
         self.set_timeout(timeout)
 
     def write(self, msg):
         msg = msg.strip()
-        msg += '\n'
+        msg += '\r'
         self.socket.sendall(msg.encode())
 
     def read_lines(self):
