@@ -85,7 +85,7 @@ def register(message):
         bot.reply_to(message, "Other authentication pending")
         return
 
-    reply_text = "Send me the OTP displayed by the printer \n({} seconds left)"
+    reply_text = "Send me the OTP displayed by the printer \n({} seconds left)\n"+send_gcode
 
     i = 60
     reply = bot.reply_to(message, reply_text.format(i))
