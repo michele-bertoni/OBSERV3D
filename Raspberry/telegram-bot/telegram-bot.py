@@ -256,7 +256,7 @@ def get_increment(message):
 
 @bot.message_handler(commands=controller_functions)
 def handle_controller_function(message):
-    conn.write(message.text[:1])
+    conn.write(message.text[1:])
     bot.reply_to(message, conn.read_line())
 
 @bot.message_handler(commands=['backup'])
