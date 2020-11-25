@@ -96,7 +96,8 @@ controller_functions = [
     'scheduleShutdown',
     'unScheduleShutdown',
     'keepRaspberryOn',
-    'keepRaspberryOff'
+    'keepRaspberryOff',
+    'update'
 ]
 
 
@@ -239,7 +240,7 @@ def ask_increment(message, increments=None):
             else:
                 markup.row(telebot.types.KeyboardButton(str(-n)),
                            telebot.types.KeyboardButton('+'+str(n)))
-        msg = bot.send_message(message.chat.id, conn.read_line(), reply_markup=markup)
+        msg = bot.send_message(message.chat.id, conn.read_line().replace(', ', '\n'), reply_markup=markup)
     bot.register_next_step_handler(msg, get_increment)
 
 def get_increment(message):
@@ -255,7 +256,8 @@ def get_increment(message):
 
 @bot.message_handler(commands=controller_functions)
 def handle_controller_function(message):
-    pass
+    conn.write(message.text[:1])
+    bot.reply_to(message, conn.read_line())
 
 @bot.message_handler(commands=['backup'])
 def backup_controller_variables(message):
