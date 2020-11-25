@@ -24,8 +24,8 @@ try:
 except IOError:
     print('API token not found', flush=True)
 
-COMMANDS = '/start', '/help', '/login', '/logout', 'snap'
 pending_auth = {}
+pending_controller_message = {}
 
 conf_path = "/home/pi/Printy-McPrintface/Raspberry/.config/"
 duet_ip_conf_path = conf_path + "duet_ip.conf"
@@ -64,6 +64,43 @@ except Exception as e:
 send_gcode = 'http://{}/rr_gcode?gcode='.format(duet_ip)
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
 
+controller_variables = {
+    '*_hue': [0, 1, 5, 10],
+    '*_saturation': [0, 1, 5, 10],
+    '*_value': [0, 1, 5, 10],
+    'chamber_hue': [0, 1, 5, 10],
+    'chamber_saturation': [0, 1, 5, 10],
+    'chamber_value': [0, 1, 5, 10],
+    'extruder_hue': [0, 1, 5, 10],
+    'extruder_saturation': [0, 1, 5, 10],
+    'extruder_value': [0, 1, 5, 10],
+    'effectDuration': [0, 1, 5, 10],
+    'fadingDuration': [0, 1, 3, 5],
+    'chamberLights': [0, 1],
+    'extruderLights': [0, 1],
+    'lightsMode': [0, 1, 5, 10],
+    'fadingMode': [0, 1, 5, 10],
+}
+
+controller_functions = [
+    'chamberLightsOff',
+    'chamberLightsOn',
+    'extruderLightsOff',
+    'extruderLightsOn',
+    'revertLights',
+    'resetSettings',
+    'loadSettings',
+    'storeSettings',
+    'scheduleReboot',
+    'unScheduleReboot',
+    'scheduleShutdown',
+    'unScheduleShutdown',
+    'keepRaspberryOn',
+    'keepRaspberryOff'
+]
+
+
+
 sock = socket.create_server(('127.0.0.1', socket_port))
 conn = None
 
@@ -85,7 +122,7 @@ def register(message):
         bot.reply_to(message, "Other authentication pending")
         return
 
-    reply_text = "Send me the OTP displayed by the printer \n({} seconds left)\n"+send_gcode
+    reply_text = "Send me the OTP displayed by the printer \n({} seconds left)"
 
     i = 60
     reply = bot.reply_to(message, reply_text.format(i))
@@ -178,7 +215,87 @@ def color(message):
     response = conn.read_line()
     bot.reply_to(message, response)
 
+@bot.message_handler(commands=[*controller_variables])
+def handle_controller_variable(message):
+    args = message.text.split(' ')
+    if len(args) == 2:
+        conn.write('{}:={}'.format(args[0][1:], args[1]))
+        bot.reply_to(message, conn.read_line())
+    elif len(args) == 1:
+        conn.write(args[0][1:])
+        pending_controller_message[message.chat.id] = args[0][1:]+'+={}, '+args[0][1:]
+        ask_increment(message, controller_variables[args[0][1:]])
+    else:
+        bot.reply_to(message, 'Too many arguments ({}); expected 0 or 1'.format(len(args)-1))
 
+def ask_increment(message, increments=None):
+    if increments is None:
+        msg = bot.send_message(message.chat.id, conn.read_line())
+    else:
+        markup = telebot.types.ReplyKeyboardMarkup()
+        for n in increments:
+            if n == 0:
+                markup.row(telebot.types.KeyboardButton('EXIT'))
+            else:
+                markup.row(telebot.types.KeyboardButton(str(-n)),
+                           telebot.types.KeyboardButton('+'+str(n)))
+        msg = bot.send_message(message.chat.id, conn.read_line(), reply_markup=markup)
+    bot.register_next_step_handler(msg, get_increment)
+
+def get_increment(message):
+    if message.text == 'EXIT':
+        bot.send_message(message.chat.id, 'ok', reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
+        try:
+            del pending_controller_message[message.chat.id]
+        except KeyError:
+            pass
+        return
+    conn.write(pending_controller_message.get(message.chat.id, 'last+={}, last').format(message.text))
+    ask_increment(message)
+
+@bot.message_handler(commands=controller_functions)
+def handle_controller_function(message):
+    pass
+
+@bot.message_handler(commands=['backup'])
+def backup_controller_variables(message):
+    controller_msg = ''
+    args = message.text.split(' ')
+    for a in args[1:]:
+        controller_msg += '{}^+=0, '.format(a)
+
+    if len(controller_msg)>2:
+        conn.write(controller_msg)
+        bot.reply_to(message, conn.read_line())
+    else:
+        pending_controller_message[message.chat.id] = '{}^+=0'
+        ask_variable(message, 'Which variable do you want to backup?')
+
+def ask_variable(message, reply_text=''):
+    markup = telebot.types.ReplyKeyboardMarkup()
+    variables = [*controller_variables]
+    i=0
+    while i<len(variables):
+        if i+2<len(variables):
+            markup.row(telebot.types.KeyboardButton(variables[i]),
+                       telebot.types.KeyboardButton(variables[i+1]),
+                       telebot.types.KeyboardButton(variables[i+2]))
+        elif i+1<len(variables):
+            markup.row(telebot.types.KeyboardButton(variables[i]),
+                       telebot.types.KeyboardButton(variables[i+1]))
+        else:
+            markup.row(telebot.types.KeyboardButton(variables[i]))
+        i+=3
+    msg = bot.send_message(message.chat.id, reply_text, reply_markup=markup)
+    bot.register_next_step_handler(msg, get_variable)
+
+def get_variable(message):
+    conn.write(pending_controller_message.get(message.chat.id, '{}').format(message.text))
+    bot.send_message(message.chat.id, conn.read_line(), reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
+    try:
+        del pending_controller_message[message.chat.id]
+    except KeyError:
+        pass
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
@@ -186,10 +303,11 @@ def send_help(message):
 
                      "/login - Authenticate your Telegram account\n" +
                      "/logout - Unregister your Telegram account\n" +
-                     "/snap - Request live snapshot of the printer\n"+
-                     "#xxxxxx - Set led color to the given hex color\n"+
+                     "/snap - Request live snapshot of the printer\n" +
+                     "#xxxxxx - Set led color to the given hex color\n" +
                      "#xxxxxx chamber - Set chamber led color\n" +
-                     "#xxxxxx extruder - Set extruder led color\n")
+                     "#xxxxxx extruder - Set extruder led color\n" +
+                     "/backup - Backup variables for a future revert")
 
 # Default command handler. A lambda expression which always returns True is used for this purpose.
 @bot.message_handler(func=lambda message: True, content_types=['audio', 'video', 'document', 'text', 'location', 'contact', 'sticker'])

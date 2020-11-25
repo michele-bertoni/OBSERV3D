@@ -213,3 +213,9 @@ class StoredValues:
             raise AttributeError('Unknown attribute {}'.format(attribute_name))
 
         return self.ranges[attribute_name].rand()
+
+    def get_value(self, attribute_name):
+        if attribute_name not in self.__dict__:
+            raise AttributeError('Unknown attribute {}'.format(attribute_name))
+
+        return getattr(self, attribute_name)
