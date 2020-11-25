@@ -257,6 +257,8 @@ class DuetMessage:
                     ret.append((-1, 'Result of function {} is unknown: {}'.format(c, str(res))))
             elif not op_found and c in self.stored_values.ranges:
                 ret.append((257, '{} = {}'.format(c, self.stored_values.get_value(c))))
+            elif not op_found and c == 'last':
+                ret.append((257, '{} = {}'.format(self.last_var, self.stored_values.get_value(self.last_var))))
             elif not op_found:
                 ret.append((-1, 'Unknown function named {}'.format(c)))
             i+=1

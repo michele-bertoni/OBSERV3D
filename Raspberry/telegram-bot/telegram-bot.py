@@ -65,42 +65,43 @@ send_gcode = 'http://{}/rr_gcode?gcode='.format(duet_ip)
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
 
 controller_variables = {
-    '*_hue': [0, 1, 5, 10],
-    '*_saturation': [0, 1, 5, 10],
-    '*_value': [0, 1, 5, 10],
-    'chamber_hue': [0, 1, 5, 10],
-    'chamber_saturation': [0, 1, 5, 10],
-    'chamber_value': [0, 1, 5, 10],
-    'extruder_hue': [0, 1, 5, 10],
-    'extruder_saturation': [0, 1, 5, 10],
-    'extruder_value': [0, 1, 5, 10],
-    'effectDuration': [0, 1, 5, 10],
-    'fadingDuration': [0, 1, 3, 5],
-    'chamberLights': [0, 1],
-    'extruderLights': [0, 1],
-    'lightsMode': [0, 1, 5, 10],
-    'fadingMode': [0, 1, 5, 10],
+    'lights': ('*Lights', [0, 1]),
+    'chamber_lights': ('chamberLights', [0, 1]),
+    'extruder_lights': ('extruderLights', [0, 1]),
+    'hue': ('*_hue', [0, 1, 5, 10]),
+    'saturation': ('*_saturation', [0, 1, 5, 10]),
+    'value': ('*_value', [0, 1, 5, 10]),
+    'chamber_hue': ('chamber_hue', [0, 1, 5, 10]),
+    'chamber_saturation': ('chamber_saturation', [0, 1, 5, 10]),
+    'chamber_value': ('chamber_value', [0, 1, 5, 10]),
+    'extruder_hue': ('extruder_hue', [0, 1, 5, 10]),
+    'extruder_saturation': ('extruder_saturation', [0, 1, 5, 10]),
+    'extruder_value': ('extruder_value', [0, 1, 5, 10]),
+    'effect_duration': ('effectDuration', [0, 1, 5, 10]),
+    'fading_duration': ('fadingDuration', [0, 1, 3, 5]),
+    'lights_mode': ('lightsMode', [0, 1, 5, 10]),
+    'fading_mode': ('fadingMode', [0, 1, 5, 10])
 }
 
-controller_functions = [
-    'chamberLightsOff',
-    'chamberLightsOn',
-    'extruderLightsOff',
-    'extruderLightsOn',
-    'revertLights',
-    'resetSettings',
-    'loadSettings',
-    'storeSettings',
-    'scheduleReboot',
-    'unScheduleReboot',
-    'scheduleShutdown',
-    'unScheduleShutdown',
-    'keepRaspberryOn',
-    'keepRaspberryOff',
-    'update'
-]
-
-
+controller_functions = {
+    'lights_off': '*LightsOff',
+    'lights_on': '*LightsOn',
+    'chamber_lights_off': 'chamberLightsOff',
+    'chamber_lights_on': 'chamberLightsOn',
+    'extruder_lights_off': 'extruderLightsOff',
+    'extruder_lights_on': 'extruderLightsOn',
+    'revert_lights': 'revertLights',
+    'reset_settings': 'resetSettings',
+    'load_settings': 'loadSettings',
+    'store_setting': 'storeSettings',
+    'schedule_reboot': 'scheduleReboot',
+    'unschedule_reboot': 'unScheduleReboot',
+    'schedule_shutdown': 'scheduleShutdown',
+    'unschedule_shutdown': 'unScheduleShutdown',
+    'keep_raspberry_on': 'keepRaspberryOn',
+    'keep_raspberry_off': 'keepRaspberryOff',
+    'update': 'update'
+}
 
 sock = socket.create_server(('127.0.0.1', socket_port))
 conn = None
@@ -220,12 +221,12 @@ def color(message):
 def handle_controller_variable(message):
     args = message.text.split(' ')
     if len(args) == 2:
-        conn.write('{}:={}'.format(args[0][1:], args[1]))
+        conn.write('{}:={}'.format(controller_variables[args[0][1:]][0], controller_variables.get(args[1], args[1])))
         bot.reply_to(message, conn.read_line())
     elif len(args) == 1:
         conn.write(args[0][1:])
-        pending_controller_message[message.chat.id] = args[0][1:]+'+={}, '+args[0][1:]
-        ask_increment(message, controller_variables[args[0][1:]])
+        pending_controller_message[message.chat.id] = controller_variables[args[0][1:]][0]+'+={}, '+controller_variables[args[0][1:]][0]
+        ask_increment(message, controller_variables[args[0][1:]][1])
     else:
         bot.reply_to(message, 'Too many arguments ({}); expected 0 or 1'.format(len(args)-1))
 
@@ -256,7 +257,7 @@ def get_increment(message):
 
 @bot.message_handler(commands=controller_functions)
 def handle_controller_function(message):
-    conn.write(message.text[1:])
+    conn.write(controller_functions[message.text[1:]])
     bot.reply_to(message, conn.read_line())
 
 @bot.message_handler(commands=['backup'])
@@ -278,16 +279,24 @@ def ask_variable(message, reply_text=''):
     variables = [*controller_variables]
     i=0
     while i<len(variables):
-        if i+2<len(variables):
+        if i+5==len(variables):
+            markup.row(telebot.types.KeyboardButton(variables[i]),
+                       telebot.types.KeyboardButton(variables[i+1]),
+                       telebot.types.KeyboardButton(variables[i+2]),
+                       telebot.types.KeyboardButton(variables[i+3]),
+                       telebot.types.KeyboardButton(variables[i+4]))
+            i+=5
+        elif i+4==len(variables):
+            markup.row(telebot.types.KeyboardButton(variables[i]),
+                       telebot.types.KeyboardButton(variables[i+1]),
+                       telebot.types.KeyboardButton(variables[i+2]),
+                       telebot.types.KeyboardButton(variables[i+3]))
+            i+=4
+        else:
             markup.row(telebot.types.KeyboardButton(variables[i]),
                        telebot.types.KeyboardButton(variables[i+1]),
                        telebot.types.KeyboardButton(variables[i+2]))
-        elif i+1<len(variables):
-            markup.row(telebot.types.KeyboardButton(variables[i]),
-                       telebot.types.KeyboardButton(variables[i+1]))
-        else:
-            markup.row(telebot.types.KeyboardButton(variables[i]))
-        i+=3
+            i+=3
     msg = bot.send_message(message.chat.id, reply_text, reply_markup=markup)
     bot.register_next_step_handler(msg, get_variable)
 
@@ -302,14 +311,49 @@ def get_variable(message):
 @bot.message_handler(commands=['help'])
 def send_help(message):
     bot.send_message(message.chat.id,
-
-                     "/login - Authenticate your Telegram account\n" +
-                     "/logout - Unregister your Telegram account\n" +
-                     "/snap - Request live snapshot of the printer\n" +
-                     "#xxxxxx - Set led color to the given hex color\n" +
-                     "#xxxxxx chamber - Set chamber led color\n" +
-                     "#xxxxxx extruder - Set extruder led color\n" +
-                     "/backup - Backup variables for a future revert")
+                    "/login - Authenticate your Telegram account\n" +
+                    "/logout - Unregister your Telegram account\n" +
+                    "/snap - Request live snapshot of the printer\n" +
+                    "/update - Pull changes and update software\n" +
+                    "#xxxxxx - Set led color to the given hex color\n" +
+                    "#xxxxxx chamber - Set chamber led color\n" +
+                    "#xxxxxx extruder - Set extruder led color\n" +
+                    "Variables: (no args increase, 1 arg set to arg)\n"
+                    "/lights - Set all lights on (1) or off (0)\n" +
+                    "/chamber_lights - Set chamber lights on or off\n" +
+                    "/extruder_lights - Set extruder lights on or off\n" +
+                    "/hue - Set all lights hue\n" +
+                    "/saturation - Set all lights saturation\n" +
+                    "/value - Set all lights brightness\n" +
+                    "/chamber_hue - Set chamber hue\n" +
+                    "/chamber_saturation - Set chamber saturation\n" +
+                    "/chamber_value - Set chamber brightness\n" +
+                    "/extruder_hue - Set extruder hue\n" +
+                    "/extruder_saturation - Set extruder saturation\n" +
+                    "/extruder_value - Set extruder brightness\n" +
+                    "/effect_duration - Set effect duration\n" +
+                    "/fading_duration - Set fading duration\n" +
+                    "/lights_mode - Set lights mode\n" +
+                    "/fading_mode - Set fading mode\n" +
+                    "Functions: (take 0 arguments)\n" +
+                    "/lights_off - Switch all lights off\n" +
+                    "/lights_on - Switch all lights on\n" +
+                    "/chamber_lights_off - Switch chamber lights off\n" +
+                    "/chamber_lights_on - Switch chamber lights on\n" +
+                    "/extruder_lights_off - Switch extruder lights off\n" +
+                    "/extruder_lights_on - Switch extruder lights on\n" +
+                    "/revert_lights - Revert lights from backup\n" +
+                    "/reset_settings - Reset settings to default\n" +
+                    "/load_settings - Load stored settings\n" +
+                    "/store_settings - Store current settings\n" +
+                    "/schedule_reboot - Printy reboots when possible\n" +
+                    "/unschedule_reboot - Unschedule reboot\n" +
+                    "/schedule_shutdown - Switch off when possible\n" +
+                    "/unschedule_shutdown - Unschefule shutdown\n" +
+                    "/keep_raspberry_on - Keep Raspberry always on\n" +
+                    "/keep_raspberry_off - RPi off when Printy is off\n" +
+                    "Varargs functions: (take any number of arguments)\n"
+                    "/backup - Backup variables for a future revert")
 
 # Default command handler. A lambda expression which always returns True is used for this purpose.
 @bot.message_handler(func=lambda message: True, content_types=['audio', 'video', 'document', 'text', 'location', 'contact', 'sticker'])
