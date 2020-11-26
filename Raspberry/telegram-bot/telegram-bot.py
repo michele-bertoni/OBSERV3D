@@ -221,10 +221,14 @@ def color(message):
 def handle_controller_variable(message):
     args = message.text.split(' ')
     if len(args) == 2:
-        conn.write('{}:={}'.format(controller_variables[args[0][1:]][0], controller_variables.get(args[1], args[1])))
+        try:
+            argument = controller_variables[args[1]][0]
+        except KeyError:
+            argument = args[1]
+        conn.write('{}:={}'.format(controller_variables[args[0][1:]][0], argument))
         bot.reply_to(message, conn.read_line())
     elif len(args) == 1:
-        conn.write(args[0][1:])
+        conn.write(controller_variables[args[0][1:]])
         pending_controller_message[message.chat.id] = controller_variables[args[0][1:]][0]+'+={}, '+controller_variables[args[0][1:]][0]
         ask_increment(message, controller_variables[args[0][1:]][1])
     else:
