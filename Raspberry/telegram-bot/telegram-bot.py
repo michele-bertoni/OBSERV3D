@@ -357,7 +357,8 @@ def send_help(message):
                     "/keep_raspberry_on - Keep Raspberry always on\n" +
                     "/keep_raspberry_off - RPi off when Printy is off\n" +
                     "Varargs functions: (take any number of arguments)\n"
-                    "/backup - Backup variables for a future revert")
+                    "/backup - Backup variables for a future revert",
+                     reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
 
 # Default command handler. A lambda expression which always returns True is used for this purpose.
 @bot.message_handler(func=lambda message: True, content_types=['audio', 'video', 'document', 'text', 'location', 'contact', 'sticker'])
