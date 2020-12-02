@@ -37,6 +37,7 @@ echo
 sleep 20
 
 c=0
+ok=0
 while true; do
   #date +"Date : %d/%m/%Y Time : %H.%M.%S"
 
@@ -52,22 +53,32 @@ while true; do
     if [[ "$?" -eq "0" ]]; then
       ping -c 2 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/wan_ip.conf)" > /dev/null
 
-      # If WAN is not accessible
-      if [[ "$?" -ne "0" ]]; then
+      # If at least 1 ping was successful
+      if [[ "$?" -eq "0" ]]; then
+        if [[ "$ok" -eq "0" ]]; then
+          ok=1
+          date +"Date : %d/%m/%Y Time : %H.%M.%S"
+          echo "Connection established"
+          echo
+        fi
+      # No pings to wan were successful
+      else
+        ok=0
         date +"Date : %d/%m/%Y Time : %H.%M.%S"
         echo "Can't ping WAN"
         echo
       fi
     # No pings to the gateway were successful
     else
-        date +"Date : %d/%m/%Y Time : %H.%M.%S"
-        echo "Extender disconnected from gateway, need reboot"
-        echo
+      ok=0
+      date +"Date : %d/%m/%Y Time : %H.%M.%S"
+      echo "Extender disconnected from gateway, need reboot"
+      echo
     fi
   # No pings to the extender were successful
   else
     c=$((c+1))
-
+    ok=0
     if [[ "$c" -lt "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, restoring"
