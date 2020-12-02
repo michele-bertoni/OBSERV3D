@@ -81,12 +81,8 @@ while true; do
     ok=0
     if [[ "$c" -lt "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
-      echo "Extender unreachable, restoring"
-      echo
-      sudo ifconfig eth0 down
-      sleep 1
-      sudo ifconfig eth0 up
-      sleep 10
+      echo "Extender unreachable, waiting"
+      sleep 20
     elif [[ "$c" -eq "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, rebooting"
