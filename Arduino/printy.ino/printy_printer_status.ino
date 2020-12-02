@@ -47,7 +47,7 @@ void PrinterStatus::checkPowerStatus() {
       setNewPrinterStatus(STATUS_O);
     }
   }
-  else if(printerStatus == STATUS_O && !powerStatus.isOff()) {
+  else if((printerStatus == STATUS_O || printerStatus == STATUS_D) && powerStatus.isOn()) {
     setNewPrinterStatus(STATUS_U);
     raspiStatus.setScheduledOn(true);
   }

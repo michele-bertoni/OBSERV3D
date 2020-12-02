@@ -89,7 +89,7 @@ class PowerStatus {
     PowerStatus(uint8_t v5Pin, uint8_t v12Pin, uint8_t v24Pin, uint8_t powerSwitchPin);
     void handlePowerStatus(); 
     void setScheduledOn(bool isOn);
-    bool isOff();
+    bool isOff(), isOn();
 };
 
 #endif

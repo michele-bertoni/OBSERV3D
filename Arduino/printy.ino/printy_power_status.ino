@@ -94,6 +94,13 @@ bool PowerStatus::isOff() {
 }
 
 /**
+ * Returns true if power strip is on, false otherwise
+ */
+bool PowerStatus::isOn() {
+  return powerStatus == _POWER_STATUS_ON;
+}
+
+/**
  * Switch to the a new status, passed as argument, updating the time of the latest status switch and simulating button pressure and release
  */
 void PowerStatus::switchPowerStatus(uint8_t status, uint8_t time) {
