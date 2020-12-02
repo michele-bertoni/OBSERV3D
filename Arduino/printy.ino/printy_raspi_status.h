@@ -15,9 +15,9 @@
 #define _RASPI_TIME_SHIFT (uint8_t)(8)                             //discard the first n less significant bits
 #define _RASPI_TIME_SHORTPRESS (uint8_t)(512>>_RASPI_TIME_SHIFT)   //raspiSwitchPin will go to ground for 512ms
 #define _RASPI_TIME_LONGPRESS (uint8_t)(2304>>_RASPI_TIME_SHIFT)   //raspiSwitchPin will go to ground for 2304ms
-#define _RASPI_TIME_WAIT (uint8_t)(3072>>_RASPI_TIME_SHIFT)        //check if PSUs are on every 3.072s
+#define _RASPI_TIME_WAIT (uint8_t)(1024>>_RASPI_TIME_SHIFT)        //check if raspberry is on every 1.024s
 #define _RASPI_TIME_DISCHARGE (uint8_t)(29952>>_RASPI_TIME_SHIFT)  //max dicharge time is 29.952s
-#define _RASPI_TIME_CHARGE (uint8_t)(6144>>_RASPI_TIME_SHIFT)      //max charge time is 6.144s
+#define _RASPI_TIME_CHARGE (uint8_t)(12288>>_RASPI_TIME_SHIFT)     //max charge time is 12.288s
 
 /**
  * Possible status of power strip
