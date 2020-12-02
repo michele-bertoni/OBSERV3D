@@ -32,9 +32,9 @@ sudo ifconfig eth0 up
 date +"Date : %d/%m/%Y Time : %H.%M.%S"
 
 # Wait 10 seconds
-echo "Wait 10 seconds"
+echo "Wait 20 seconds"
 echo
-sleep 10
+sleep 20
 
 c=0
 while true; do
@@ -76,7 +76,7 @@ while true; do
       sleep 1
       sudo ifconfig eth0 up
       sleep 10
-    else
+    elif [[ "$c" -eq "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, rebooting"
       echo
