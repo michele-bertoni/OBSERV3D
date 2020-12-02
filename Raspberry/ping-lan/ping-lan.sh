@@ -32,7 +32,8 @@ sudo ifconfig eth0 up
 date +"Date : %d/%m/%Y Time : %H.%M.%S"
 
 # Wait 10 seconds
-echo "Wait 10 seconds\n"
+echo "Wait 10 seconds"
+echo
 sleep 10
 
 c=0
@@ -54,12 +55,14 @@ while true; do
       # If WAN is not accessible
       if [[ "$?" -ne "0" ]]; then
         date +"Date : %d/%m/%Y Time : %H.%M.%S"
-        echo "Can't ping WAN\n"
+        echo "Can't ping WAN"
+        echo
       fi
     # No pings to the gateway were successful
     else
         date +"Date : %d/%m/%Y Time : %H.%M.%S"
-        echo "Extender disconnected from gateway, need reboot\n"
+        echo "Extender disconnected from gateway, need reboot"
+        echo
     fi
   # No pings to the extender were successful
   else
@@ -67,14 +70,16 @@ while true; do
 
     if [[ "$c" -lt "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
-      echo "Extender unreachable, restoring\n"
+      echo "Extender unreachable, restoring"
+      echo
       sudo ifconfig eth0 down
       sleep 1
       sudo ifconfig eth0 up
       sleep 10
     else
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
-      echo "Extender unreachable, rebooting\n"
+      echo "Extender unreachable, rebooting"
+      echo
       sudo reboot
     fi
   fi
