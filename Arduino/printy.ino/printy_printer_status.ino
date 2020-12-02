@@ -41,7 +41,7 @@ void PrinterStatus::checkPowerStatus() {
   powerStatus.handlePowerStatus();
   raspiStatus.handleRaspiStatus();
 
-  if(printerStatus != STATUS_O && powerStatus.isOff()) {
+  if(printerStatus != STATUS_O && printerStatus != STATUS_U && powerStatus.isOff()) {
     raspiStatus.setScheduledOn(keepRaspberryOn);
     if(keepRaspberryOn || raspiStatus.isOff()) {
       setNewPrinterStatus(STATUS_O);
@@ -51,6 +51,12 @@ void PrinterStatus::checkPowerStatus() {
     setNewPrinterStatus(STATUS_U);
     raspiStatus.setScheduledOn(true);
   }
+  else if (printerStatus == STATUS_U && powerStatus.isOff()) {
+    setNewPrinterStatus(STATUS_U);
+    powerStatus.setScheduledOn(true);
+    raspiStatus.setScheduledOn(true);
+  }
+  
 }
 
 bool PrinterStatus::checkPowerButton(uint8_t time) {
