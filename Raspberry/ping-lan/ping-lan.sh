@@ -47,7 +47,7 @@ while true; do
   # If at least 1 ping was successful
   if [[ "$?" -eq "0" ]]; then
     # Ping 3 times the gateway
-    ping -c 3 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/router_ext_ip.conf)" > /dev/null
+    ping -c 3 "$(cat /home/pi/Printy-McPrintface/Raspberry/.config/gateway_ip.conf)" > /dev/null
 
     # If at least 1 ping was successful
     if [[ "$?" -eq "0" ]]; then
@@ -82,7 +82,8 @@ while true; do
     if [[ "$c" -lt "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, waiting"
-      sleep 20
+      echo
+      sleep 10
     elif [[ "$c" -eq "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, rebooting"
