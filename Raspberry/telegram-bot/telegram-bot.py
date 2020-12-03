@@ -249,12 +249,12 @@ def handle_controller_variable(message):
     elif len(args) == 1:
         conn.write(controller_variables[args[0][1:]][0])
         pending_controller_message[message.chat.id] = controller_variables[args[0][1:]][0]+'+={}, '+controller_variables[args[0][1:]][0]
+        set_next_step(message.chat.id, 'get_increment')
         ask_increment(message, controller_variables[args[0][1:]][1])
     else:
         bot.reply_to(message, 'Too many arguments ({}); expected 0 or 1'.format(len(args)-1))
 
 def ask_increment(message, increments=None):
-    set_next_step(message.chat.id, 'get_increment')
     if increments is None:
         bot.send_message(message.chat.id, conn.read_line())
     else:
@@ -297,10 +297,10 @@ def backup_controller_variables(message):
         bot.reply_to(message, conn.read_line())
     else:
         pending_controller_message[message.chat.id] = '{}^+=0'
+        set_next_step(message.chat.id, 'get_variable')
         ask_variable(message, 'Which variable do you want to backup?')
 
 def ask_variable(message, reply_text=''):
-    set_next_step(message.chat.id, 'get_variable')
     markup = telebot.types.ReplyKeyboardMarkup()
     variables = [*controller_variables]
     i=0
