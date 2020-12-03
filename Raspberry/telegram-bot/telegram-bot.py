@@ -235,8 +235,9 @@ def handle_controller_variable(message):
         bot.reply_to(message, 'Too many arguments ({}); expected 0 or 1'.format(len(args)-1))
 
 def ask_increment(message, increments=None):
+    bot.register_next_step_handler_by_chat_id(message.chat.id, get_increment)
     if increments is None:
-        msg = bot.send_message(message.chat.id, conn.read_line())
+        bot.send_message(message.chat.id, conn.read_line())
     else:
         markup = telebot.types.ReplyKeyboardMarkup()
         for n in increments:
@@ -245,8 +246,7 @@ def ask_increment(message, increments=None):
             else:
                 markup.row(telebot.types.KeyboardButton(str(-n)),
                            telebot.types.KeyboardButton('+'+str(n)))
-        msg = bot.send_message(message.chat.id, conn.read_line().replace(', ', '\n'), reply_markup=markup)
-    bot.register_next_step_handler(msg, get_increment)
+        bot.send_message(message.chat.id, conn.read_line().replace(', ', '\n'), reply_markup=markup)
 
 def get_increment(message):
     if message.text == 'EXIT':
@@ -279,6 +279,7 @@ def backup_controller_variables(message):
         ask_variable(message, 'Which variable do you want to backup?')
 
 def ask_variable(message, reply_text=''):
+    bot.register_next_step_handler_by_chat_id(message.chat.id, get_variable)
     markup = telebot.types.ReplyKeyboardMarkup()
     variables = [*controller_variables]
     i=0
@@ -301,8 +302,7 @@ def ask_variable(message, reply_text=''):
                        telebot.types.KeyboardButton(variables[i+1]),
                        telebot.types.KeyboardButton(variables[i+2]))
             i+=3
-    msg = bot.send_message(message.chat.id, reply_text, reply_markup=markup)
-    bot.register_next_step_handler(msg, get_variable)
+    bot.send_message(message.chat.id, reply_text, reply_markup=markup)
 
 def get_variable(message):
     conn.write(pending_controller_message.get(message.chat.id, '{}').format(message.text))

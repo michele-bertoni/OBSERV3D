@@ -83,7 +83,6 @@ while true; do
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, waiting"
       echo
-      sleep 10
     elif [[ "$c" -eq "3" ]]; then
       date +"Date : %d/%m/%Y Time : %H.%M.%S"
       echo "Extender unreachable, rebooting"
