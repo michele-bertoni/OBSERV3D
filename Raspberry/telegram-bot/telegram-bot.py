@@ -10,6 +10,7 @@ import time
 import socket
 import requests
 import telebot
+import threading
 
 import colorsys
 
@@ -25,6 +26,24 @@ except IOError:
     print('API token not found', flush=True)
 
 pending_auth = {}
+
+_next_step_lock = threading.Lock()
+next_step = {}
+
+def get_next_step(chat_id):
+    with _next_step_lock:
+        return next_step.get(chat_id, "")
+
+def set_next_step(chat_id, func_name):
+    with _next_step_lock:
+        next_step[chat_id] = func_name
+
+def reset_if_next_step(chat_id, curr_func_name):
+    with _next_step_lock:
+        if next_step.get(chat_id, "") == curr_func_name:
+            del next_step[chat_id]
+
+
 pending_controller_message = {}
 
 conf_path = "/home/pi/Printy-McPrintface/Raspberry/.config/"
@@ -235,7 +254,7 @@ def handle_controller_variable(message):
         bot.reply_to(message, 'Too many arguments ({}); expected 0 or 1'.format(len(args)-1))
 
 def ask_increment(message, increments=None):
-    bot.register_next_step_handler_by_chat_id(message.chat.id, get_increment)
+    set_next_step(message.chat.id, 'get_increment')
     if increments is None:
         bot.send_message(message.chat.id, conn.read_line())
     else:
@@ -248,9 +267,11 @@ def ask_increment(message, increments=None):
                            telebot.types.KeyboardButton('+'+str(n)))
         bot.send_message(message.chat.id, conn.read_line().replace(', ', '\n'), reply_markup=markup)
 
+@bot.message_handler(func=lambda message: get_next_step(message.chat.id)=='get_increment')
 def get_increment(message):
     if message.text == 'EXIT':
         bot.send_message(message.chat.id, 'ok', reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
+        reset_if_next_step(message.chat.id, 'get_increment')
         try:
             del pending_controller_message[message.chat.id]
         except KeyError:
@@ -279,7 +300,7 @@ def backup_controller_variables(message):
         ask_variable(message, 'Which variable do you want to backup?')
 
 def ask_variable(message, reply_text=''):
-    bot.register_next_step_handler_by_chat_id(message.chat.id, get_variable)
+    set_next_step(message.chat.id, 'get_variable')
     markup = telebot.types.ReplyKeyboardMarkup()
     variables = [*controller_variables]
     i=0
@@ -304,13 +325,15 @@ def ask_variable(message, reply_text=''):
             i+=3
     bot.send_message(message.chat.id, reply_text, reply_markup=markup)
 
+@bot.message_handler(func=lambda message: get_next_step(message.chat.id)=='get_variable')
 def get_variable(message):
+    reset_if_next_step(message.chat.id, 'get_variable')
     conn.write(pending_controller_message.get(message.chat.id, '{}').format(message.text))
-    bot.send_message(message.chat.id, conn.read_line(), reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
     try:
         del pending_controller_message[message.chat.id]
     except KeyError:
         pass
+    bot.send_message(message.chat.id, conn.read_line(), reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
