@@ -414,9 +414,11 @@ def send_help(message):
                     "/schedule_reboot - Printy reboots when possible\n" +
                     "/unschedule_reboot - Unschedule reboot\n" +
                     "/schedule_shutdown - Switch off when possible\n" +
-                    "/unschedule_shutdown - Unschefule shutdown\n" +
+                    "/unschedule_shutdown - Unschedule shutdown\n" +
                     "/keep_raspberry_on - Keep Raspberry always on\n" +
                     "/keep_raspberry_off - RPi off when Printy is off\n" +
+                    "Macros: (take 0 arguments)\n" +
+                    "/color - Select one of Duet preset colors\n"
                     "Varargs functions: (take any number of arguments)\n"
                     "/backup - Backup variables for a future revert",
                      reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
