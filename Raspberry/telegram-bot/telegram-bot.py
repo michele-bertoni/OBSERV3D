@@ -30,6 +30,13 @@ pending_auth = {}
 _next_step_lock = threading.Lock()
 next_step = {}
 
+def get_duet_reply(sleep_time=0.1):
+    time.sleep(sleep_time)
+    replies = requests.get(send_request_reply).text.split('\n')[:-2]
+    if len(replies) == 0 or len(replies[-1]) == 0:
+        return 'ok'
+    return replies[-1]
+
 def get_next_step(chat_id):
     with _next_step_lock:
         return next_step.get(chat_id, "")
@@ -43,6 +50,31 @@ def reset_if_next_step(chat_id, curr_func_name):
         if next_step.get(chat_id, "") == curr_func_name:
             del next_step[chat_id]
 
+def markup_from_list(elements, width, max_width=None, bottom_more=True, one_time_keyboard=False):
+    markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=one_time_keyboard)
+    if max_width is None or max_width<width:
+        max_width = width
+
+    length = len(elements)
+    w_lines = int(length/width)
+    rest = length%width
+    lines = [width for i in range(w_lines)]
+    excess = max_width-width
+    if rest <= excess*w_lines:
+        i = (0, w_lines-1)[bottom_more]
+        while rest > 0:
+            lines[i]+=min(rest, excess)
+            rest-=min(rest, excess)
+            i = (i+1, i-1)[bottom_more]
+    else:
+        lines.append(rest)
+
+    i=0
+    for l in lines:
+        markup.row(*[telebot.types.KeyboardButton(elements[j]) for j in range(i, i+l)])
+        i += l
+
+    return markup
 
 pending_controller_message = {}
 
@@ -80,8 +112,11 @@ try:
 except Exception as e:
     print(e, flush=True)
 
-send_gcode = 'http://{}/rr_gcode?gcode='.format(duet_ip)
+send_gcode = "http://{}/rr_gcode?gcode=".format(duet_ip)
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
+send_request_filelist = "http://{}/rr_filelist?dir=".format(duet_ip)
+send_request_macro = send_gcode + "M98 P\"{}\""
+send_request_reply = "http://{}/rr_reply".format(duet_ip)
 
 controller_variables = {
     'lights': ('*Lights', [0, 1]),
@@ -120,6 +155,10 @@ controller_functions = {
     'keep_raspberry_on': 'keepRaspberryOn',
     'keep_raspberry_off': 'keepRaspberryOff',
     'update': 'update'
+}
+
+duet_macros = {
+    'color': '/macros/Leds/Colors/'
 }
 
 sock = socket.create_server(('127.0.0.1', socket_port))
@@ -301,28 +340,8 @@ def backup_controller_variables(message):
         ask_variable(message, 'Which variable do you want to backup?')
 
 def ask_variable(message, reply_text=''):
-    markup = telebot.types.ReplyKeyboardMarkup()
     variables = [*controller_variables]
-    i=0
-    while i<len(variables):
-        if i+5==len(variables):
-            markup.row(telebot.types.KeyboardButton(variables[i]),
-                       telebot.types.KeyboardButton(variables[i+1]),
-                       telebot.types.KeyboardButton(variables[i+2]),
-                       telebot.types.KeyboardButton(variables[i+3]),
-                       telebot.types.KeyboardButton(variables[i+4]))
-            i+=5
-        elif i+4==len(variables):
-            markup.row(telebot.types.KeyboardButton(variables[i]),
-                       telebot.types.KeyboardButton(variables[i+1]),
-                       telebot.types.KeyboardButton(variables[i+2]),
-                       telebot.types.KeyboardButton(variables[i+3]))
-            i+=4
-        else:
-            markup.row(telebot.types.KeyboardButton(variables[i]),
-                       telebot.types.KeyboardButton(variables[i+1]),
-                       telebot.types.KeyboardButton(variables[i+2]))
-            i+=3
+    markup = markup_from_list(variables, 3, max_width=4)
     bot.send_message(message.chat.id, reply_text, reply_markup=markup)
 
 @bot.message_handler(func=lambda message: get_next_step(message.chat.id)=='get_variable')
@@ -334,6 +353,25 @@ def get_variable(message):
     except KeyError:
         pass
     bot.send_message(message.chat.id, conn.read_line(), reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
+
+def get_macro(message, macro_dir):
+    macro = macro_dir + message.text
+    requests.get(send_request_macro.format(macro))
+    bot.send_message(message.chat.id, get_duet_reply(), reply_to_message_id=message.message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
+
+@bot.message_handler(commands=[*duet_macros])
+def handle_macro(message):
+    macros_dir = duet_macros[message.text[1:]]
+    if macros_dir.endswith('/'):
+        json_response = requests.get(send_request_filelist + macros_dir).json()
+        callable_macros = [m['name'] for m in json_response['files']]
+        markup = markup_from_list(callable_macros, 3, max_width=4, one_time_keyboard=True)
+        bot.register_next_step_handler_by_chat_id(message.chat.id, get_macro, macros_dir)
+        bot.send_message(message.chat.id, "Which macro do you want to call?", reply_to_message_id=message.message_id, reply_markup=markup)
+
+    else:
+        requests.get(send_request_macro.format(macros_dir))
+        bot.reply_to(message, get_duet_reply())
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
