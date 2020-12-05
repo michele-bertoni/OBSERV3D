@@ -11,6 +11,8 @@ import socket
 import requests
 import telebot
 import threading
+import _thread
+import json
 
 import colorsys
 
@@ -30,12 +32,33 @@ pending_auth = {}
 _next_step_lock = threading.Lock()
 next_step = {}
 
-def get_duet_reply(sleep_time=0.1):
+def get_duet_reply(num_replies:int, sleep_time=0.1):
     time.sleep(sleep_time)
-    replies = requests.get(send_request_reply).text.split('\n')[:-2]
-    if len(replies) == 0 or len(replies[-1]) == 0:
+    replies = requests.get(send_request_reply).text
+    replies = replies.replace('\r', '\n')
+    if replies.endswith('\n'):
+        replies = replies[:-1]
+    replies = replies.split('\n')[-num_replies:]
+    replies = list(filter(lambda r: r != '', replies))
+    if len(replies) == 0:
         return 'ok'
-    return replies[-1]
+    return '\n'.join(replies)
+
+def get_duet_json_reply(num_replies:int, sleep_time=0.1):
+    time.sleep(sleep_time)
+    replies = requests.get(send_request_reply).text
+    replies = replies.replace('\r', '\n')
+    if replies.endswith('\n'):
+        replies = replies[:-1]
+    replies = replies.split('\n')[-num_replies:]
+    replies.reverse()
+    for r in replies:
+        if r.startswith('{'):
+            try:
+                return json.loads(r)
+            except json.JSONDecodeError:
+                pass
+    return json.loads('{}')
 
 def get_next_step(chat_id):
     with _next_step_lock:
@@ -54,7 +77,6 @@ def markup_from_list(elements, width, max_width=None, bottom_more=True, one_time
     markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=one_time_keyboard)
     if max_width is None or max_width<width:
         max_width = width
-
     length = len(elements)
     w_lines = int(length/width)
     rest = length%width
@@ -68,13 +90,71 @@ def markup_from_list(elements, width, max_width=None, bottom_more=True, one_time
             i = (i+1, i-1)[bottom_more]
     else:
         lines.append(rest)
-
     i=0
     for l in lines:
         markup.row(*[telebot.types.KeyboardButton(elements[j]) for j in range(i, i+l)])
         i += l
-
     return markup
+
+def get_homed_axes():
+    requests.get(send_gcode + "M409 K\"move.axes[].homed\"")
+    json_reply = get_duet_json_reply(2, 0.1)
+    homed = json_reply.get('result', ('false', 'false', 'false'))
+    return tuple(homed)
+
+def home_axes(message, axes:tuple=None, homed:tuple=None):
+    if axes is None:
+        arguments = message.text.split(' ', 1)
+        axes = ('x' in arguments, 'y' in arguments, 'z' in arguments)
+        if axes == (False, False, False):
+            axes = (True, True, True)
+
+    if axes == (False, False, False):
+        return
+
+    if axes[2] and not(axes[0] and axes[1]):
+        if homed is None:
+            homed = get_homed_axes()
+        axes = (axes[0] or not homed[0], axes[1] or not homed[1], True)
+    requests.get(send_gcode + "G28 {}{}{}".format(('', 'X')[axes[0]],
+                                                  ('', 'Y')[axes[1]],
+                                                  ('', 'Z')[axes[2]]))
+    if axes[2]:
+        duet_polling.subscribe(message.chat.id, "check_bed")
+
+    homed = get_homed_axes()
+    t = time.time()
+    while time.time()-t < 60.0 and homed != axes:
+        time.sleep(1)
+        homed = get_homed_axes()
+
+    if homed != axes:
+        bot.reply_to(message, "Homing timed out")
+    else:
+        bot.reply_to(message, "Homing ok")
+
+def relative_movement(message):
+    command = message.text.split(' ')[0][1:]
+    arguments = message.text.split(' ')[1:]
+    axes = ('x' in command, 'y' in command, 'z' in command)
+    homed = get_homed_axes()
+    home_axes(message, (axes[0] and not homed[0], axes[1] and not homed[1], axes[2] and not homed[2]), homed)
+
+    if arguments == len(command):
+        i=0
+        if 'x' in command:
+            x = arguments[0]
+        if 'y' in command:
+            x = arguments[0]
+
+def absolute_movement(message):
+    pass
+
+def relative_extrusion(message):
+    pass
+
+def gcode_error(message):
+    bot.reply_to(message, "Wrong number of arguments")
 
 pending_controller_message = {}
 
@@ -158,7 +238,20 @@ controller_functions = {
 }
 
 duet_macros = {
-    'color': '/macros/Leds/Colors/'
+    'color': ('/macros/Leds/Colors/', 2, 0.1),
+    'beds': ('/macros/Beds/', 2, 0.1)
+}
+
+duet_gcodes = {
+    'home': [home_axes, home_axes, home_axes, home_axes],
+    'x': [relative_movement, absolute_movement],
+    'y': [relative_movement, absolute_movement],
+    'z': [relative_movement, absolute_movement],
+    'xy': [relative_movement, gcode_error, relative_movement],
+    'xz': [relative_movement, gcode_error, relative_movement],
+    'yz': [relative_movement, gcode_error, relative_movement],
+    'xyz': [relative_movement, gcode_error, gcode_error, relative_movement],
+    'e': [relative_extrusion, relative_extrusion]
 }
 
 sock = socket.create_server(('127.0.0.1', socket_port))
@@ -252,6 +345,21 @@ def send_snapshot(message):
         print(exc, flush=True)
         bot.reply_to(message, "Unable to send snapshot: " + str(exc))
 
+def send_snapshot_by_chat_id(chat_id):
+    if not auth.authentication(chat_id):
+        bot.send_message(chat_id, "Authentication failed: /login")
+        return
+
+    try:
+        requests.get(send_request_snapshot)
+        time.sleep(1)
+
+        with open(motion_lastSnap_path+'lastsnap.jpg', 'rb') as snap:
+            bot.send_photo(chat_id, snap)
+    except Exception as exc:
+        print(exc, flush=True)
+        bot.send_message(chat_id, "Unable to send snapshot: " + str(exc))
+
 @bot.message_handler(regexp="^#[0-9a-fA-F]{6}([ ]{1}[a-z]*)?$")
 def color(message):
     if not auth.authentication(message.chat.id):
@@ -277,6 +385,10 @@ def color(message):
 
 @bot.message_handler(commands=[*controller_variables])
 def handle_controller_variable(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
     args = message.text.split(' ')
     if len(args) == 2:
         try:
@@ -294,6 +406,10 @@ def handle_controller_variable(message):
         bot.reply_to(message, 'Too many arguments ({}); expected 0 or 1'.format(len(args)-1))
 
 def ask_increment(message, increments=None):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
     if increments is None:
         bot.send_message(message.chat.id, conn.read_line())
     else:
@@ -308,6 +424,10 @@ def ask_increment(message, increments=None):
 
 @bot.message_handler(func=lambda message: get_next_step(message.chat.id)=='get_increment')
 def get_increment(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
     if message.text == 'EXIT':
         bot.send_message(message.chat.id, 'ok', reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
         reset_if_next_step(message.chat.id, 'get_increment')
@@ -321,11 +441,19 @@ def get_increment(message):
 
 @bot.message_handler(commands=controller_functions)
 def handle_controller_function(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
     conn.write(controller_functions[message.text[1:]])
     bot.reply_to(message, conn.read_line())
 
 @bot.message_handler(commands=['backup'])
 def backup_controller_variables(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
     controller_msg = ''
     args = message.text.split(' ')
     for a in args[1:]:
@@ -340,12 +468,20 @@ def backup_controller_variables(message):
         ask_variable(message, 'Which variable do you want to backup?')
 
 def ask_variable(message, reply_text=''):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
     variables = [*controller_variables]
     markup = markup_from_list(variables, 3, max_width=4)
     bot.send_message(message.chat.id, reply_text, reply_markup=markup)
 
 @bot.message_handler(func=lambda message: get_next_step(message.chat.id)=='get_variable')
 def get_variable(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
     reset_if_next_step(message.chat.id, 'get_variable')
     conn.write(pending_controller_message.get(message.chat.id, '{}').format(message.text))
     try:
@@ -354,24 +490,48 @@ def get_variable(message):
         pass
     bot.send_message(message.chat.id, conn.read_line(), reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
 
-def get_macro(message, macro_dir):
-    macro = macro_dir + message.text
+def get_macro(message, macro_tuple):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
+    macro = macro_tuple[0] + message.text
     requests.get(send_request_macro.format(macro))
-    bot.send_message(message.chat.id, get_duet_reply(), reply_to_message_id=message.message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
+    bot.send_message(message.chat.id, get_duet_reply(num_replies=macro_tuple[1], sleep_time=macro_tuple[2]),
+                     reply_to_message_id=message.message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
 
 @bot.message_handler(commands=[*duet_macros])
 def handle_macro(message):
-    macros_dir = duet_macros[message.text[1:]]
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
+    macro_tuple = duet_macros[message.text[1:]]
+    macros_dir = macro_tuple[0]
     if macros_dir.endswith('/'):
         json_response = requests.get(send_request_filelist + macros_dir).json()
         callable_macros = [m['name'] for m in json_response['files']]
         markup = markup_from_list(callable_macros, 3, max_width=4, one_time_keyboard=True)
-        bot.register_next_step_handler_by_chat_id(message.chat.id, get_macro, macros_dir)
-        bot.send_message(message.chat.id, "Which macro do you want to call?", reply_to_message_id=message.message_id, reply_markup=markup)
+        bot.register_next_step_handler_by_chat_id(message.chat.id, get_macro, macro_tuple)
+        bot.send_message(message.chat.id, "Which macro do you want to call?",
+                         reply_to_message_id=message.message_id, reply_markup=markup)
 
     else:
         requests.get(send_request_macro.format(macros_dir))
-        bot.reply_to(message, get_duet_reply())
+        bot.reply_to(message, get_duet_reply(num_replies=macro_tuple[1], sleep_time=macro_tuple[2]))
+
+@bot.message_handler(commands=[*duet_gcodes])
+def handle_gcode(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
+    command = message.text.split(' ')[0][1:]
+    args = message.text.split(' ')[1:]
+    # try:
+    duet_gcodes[command][len(args)](message)
+    # except Exception as exc:
+    #    bot.reply_to(message, str(exc))
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
@@ -429,13 +589,99 @@ def default_command(message):
     bot.reply_to(message, "Unknown message")
     send_help(message)
 
+def handle_m291(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
 
+    if message.text == 'OK':
+        requests.get(send_gcode+'M292 P0')
+    else:
+        requests.get(send_gcode+'M292 P1')
+    bot.send_message(message.chat.id, get_duet_reply(1), reply_to_message_id=message.message_id, reply_markup=telebot.types.ReplyKeyboardRemove())
+
+
+class DuetPolling(threading.Thread):
+    def _check_bed(self, chat_id, arg: str):
+        send_snapshot_by_chat_id(chat_id)
+        markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        markup.row(telebot.types.KeyboardButton('OK'), telebot.types.KeyboardButton('Cancel'))
+        self._bot.register_next_step_handler_by_chat_id(chat_id, handle_m291)
+        self._bot.send_message(chat_id,
+                               "{} bed check\nCheck if {} bed is loaded; if not, load it before pressing OK. Press Cancel to interrupt.".format(arg, arg),
+                               reply_markup=markup)
+
+    _commands = {
+        "check_bed": _check_bed
+    }
+
+    _subscribers_lock = threading.Lock()
+    _subscribers = dict.fromkeys(_commands,[])
+
+    def __init__(self, telegram_bot:telebot.TeleBot, duet_ip_address:str, polling_period=1.0):
+        threading.Thread.__init__(self)
+        self._bot = telegram_bot
+        self._duet_ip = duet_ip_address
+        self._reply_url = "http://{}/rr_reply".format(duet_ip_address)
+        self._send_gcode_url = "http://{}/rr_gcode?gcode=".format(duet_ip_address)
+        self._polling_period = polling_period
+        self._stop = False
+
+    def subscribe(self, chat_id, command:str):
+        if command not in self._commands:
+            return False
+        with self._subscribers_lock:
+            self._subscribers[command].append(chat_id)
+        return True
+
+    def unsubscribe(self, chat_id, command:str):
+        if command not in self._commands:
+            return False
+        with self._subscribers_lock:
+            self._subscribers[command].remove(chat_id)
+        return True
+
+    def _unsubscribe_all(self, command:str):
+        if command not in self._commands:
+            return False
+        with self._subscribers_lock:
+            self._subscribers[command] = []
+        return True
+
+    def stop(self):
+        self._stop = True
+
+    def run(self):
+        scheduled_time = time.time()
+        while not self._stop:
+            if time.time()>=scheduled_time:
+                scheduled_time += self._polling_period
+                replies = requests.get(send_request_reply).text
+                replies = replies.replace('\r', '\n')
+                if replies.endswith('\n'):
+                    replies = replies[:-1]
+                replies = replies.split('\n')
+                for r in replies:
+                    if r.startswith('/'):
+                        command = r.split(' ', 1)[0][1:]
+                        arg = r.split(' ', 1)[1]
+                        with self._subscribers_lock:
+                            for s in self._subscribers.get(command, []):
+                                _thread.start_new_thread(self._commands[command], (self, s, arg))
+                        self._unsubscribe_all(command)
+            sleep_time = scheduled_time-time.time()
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+        self._stop = True
+
+duet_polling = DuetPolling(bot, duet_ip, 0.5)
 
 if __name__ == "__main__":
     print("Socket listening on 127.0.0.1:{}".format(socket_port))
     sock.listen()
     conn = SocketServerLineProtocol(sock.accept()[0])
     print("Printy McPrintface Telegram Bot listening...", flush=True)
+    duet_polling.start()
     bot.polling()
     while True:
         time.sleep(1)
