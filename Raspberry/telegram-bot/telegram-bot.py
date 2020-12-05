@@ -125,7 +125,7 @@ def home_axes(message, axes:tuple=None, homed:tuple=None):
     homed = get_homed_axes()
     t = time.time()
     while time.time()-t < 60.0 and homed != axes:
-        time.sleep(1)
+        time.sleep(1.9)
         homed = get_homed_axes()
 
     if homed != axes:
@@ -654,24 +654,27 @@ class DuetPolling(threading.Thread):
     def run(self):
         scheduled_time = time.time()
         while not self._stop:
-            if time.time()>=scheduled_time:
-                scheduled_time += self._polling_period
-                replies = requests.get(send_request_reply).text
-                replies = replies.replace('\r', '\n')
-                if replies.endswith('\n'):
-                    replies = replies[:-1]
-                replies = replies.split('\n')
-                for r in replies:
-                    if r.startswith('/'):
-                        command = r.split(' ', 1)[0][1:]
-                        arg = r.split(' ', 1)[1]
-                        with self._subscribers_lock:
-                            for s in self._subscribers.get(command, []):
-                                _thread.start_new_thread(self._commands[command], (self, s, arg))
-                        self._unsubscribe_all(command)
-            sleep_time = scheduled_time-time.time()
-            if sleep_time > 0:
-                time.sleep(sleep_time)
+            try:
+                if time.time()>=scheduled_time:
+                    scheduled_time += self._polling_period
+                    replies = requests.get(send_request_reply).text
+                    replies = replies.replace('\r', '\n')
+                    if replies.endswith('\n'):
+                        replies = replies[:-1]
+                    replies = replies.split('\n')
+                    for r in replies:
+                        if r.startswith('/'):
+                            command = r.split(' ', 1)[0][1:]
+                            arg = r.split(' ', 1)[1]
+                            with self._subscribers_lock:
+                                for s in self._subscribers.get(command, []):
+                                    _thread.start_new_thread(self._commands[command], (self, s, arg))
+                            self._unsubscribe_all(command)
+                sleep_time = scheduled_time-time.time()
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+            except Exception as exc:
+                print(exc)
         self._stop = True
 
 duet_polling = DuetPolling(bot, duet_ip, 0.5)
