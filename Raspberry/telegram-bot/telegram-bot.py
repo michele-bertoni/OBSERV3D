@@ -124,7 +124,7 @@ def home_axes(message, axes:tuple=None, homed:tuple=None):
 
     homed = get_homed_axes()
     t = time.time()
-    while time.time()-t < 60.0 and ((not axes[0] or homed[0]) and (not axes[1] or homed[1]) and (not axes[2] or homed[2])):
+    while time.time()-t < 60.0 and not ((not axes[0] or homed[0]) and (not axes[1] or homed[1]) and (not axes[2] or homed[2])):
         time.sleep(1.9)
         homed = get_homed_axes()
 
