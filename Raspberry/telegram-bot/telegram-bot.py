@@ -124,14 +124,14 @@ def home_axes(message, axes:tuple=None, homed:tuple=None):
 
     homed = get_homed_axes()
     t = time.time()
-    while time.time()-t < 60.0 and homed != axes:
+    while time.time()-t < 60.0 and ((not axes[0] or homed[0]) and (not axes[1] or homed[1]) and (not axes[2] or homed[2])):
         time.sleep(1.9)
         homed = get_homed_axes()
 
-    if homed != axes:
-        bot.reply_to(message, "Homing timed out")
-    else:
+    if (not axes[0] or homed[0]) and (not axes[1] or homed[1]) and (not axes[2] or homed[2]):
         bot.reply_to(message, "Homing ok")
+    else:
+        bot.reply_to(message, "Homing timed out")
 
 def relative_movement(message):
     command = message.text.split(' ')[0][1:]
