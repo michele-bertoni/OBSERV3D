@@ -614,7 +614,7 @@ class DuetPolling(threading.Thread):
         t = time.time()
         self._bot.register_next_step_handler_by_chat_id(chat_id, handle_m291, t)
         msg = self._bot.send_message(chat_id,
-                               "**{}** bed check\nCheck if **{}** bed is loaded; if not, load it before pressing _OK_. Press _Cancel_ to interrupt.".format(arg, arg),
+                               "*{}* bed check\nCheck if *{}* bed is loaded; if not, load it before pressing _OK_. Press _Cancel_ to interrupt.".format(arg, arg),
                                reply_markup=markup, parse_mode="Markdown")
         time.sleep(15)
         handlers = self._bot.next_step_backend.handlers.get(chat_id, [telebot.Handler(None, None, None)])
