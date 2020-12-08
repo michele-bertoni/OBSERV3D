@@ -104,7 +104,7 @@ def get_homed_axes():
 
 def home_axes(message, axes:tuple=None, homed:tuple=None):
     if axes is None:
-        arguments = message.text.split(' ', 1)
+        arguments = message.text.split(' ', 1)[1]
         axes = ('x' in arguments, 'y' in arguments, 'z' in arguments)
         if axes == (False, False, False):
             axes = (True, True, True)
@@ -124,7 +124,7 @@ def home_axes(message, axes:tuple=None, homed:tuple=None):
 
     homed = get_homed_axes()
     t = time.time()
-    while time.time()-t < 60.0 and not ((not axes[0] or homed[0]) and (not axes[1] or homed[1]) and (not axes[2] or homed[2])):
+    while time.time()-t < 60.0 and ((axes[0] and not homed[0]) or (axes[1] and not homed[1]) or (axes[2] and not homed[2])):
         time.sleep(1.9)
         homed = get_homed_axes()
 
