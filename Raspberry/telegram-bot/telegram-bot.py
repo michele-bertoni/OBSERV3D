@@ -594,7 +594,7 @@ def default_command(message):
     bot.reply_to(message, "Unknown message")
     send_help(message)
 
-def handle_m291(message, ):
+def handle_m291(message, t):
     if not auth.authentication(message.chat.id):
         bot.reply_to(message, "Authentication failed: /login")
         return
@@ -611,16 +611,19 @@ class DuetPolling(threading.Thread):
         snap = send_snapshot_by_chat_id(chat_id)
         markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True)
         markup.row(telebot.types.KeyboardButton('OK'), telebot.types.KeyboardButton('Cancel'))
-        self._bot.register_next_step_handler_by_chat_id(chat_id, handle_m291)
+        t = time.time()
+        self._bot.register_next_step_handler_by_chat_id(chat_id, handle_m291, t)
         msg = self._bot.send_message(chat_id,
-                               "**{}** bed check\nCheck if **{}** bed is loaded; if not, load it before pressing OK. Press Cancel to interrupt.".format(arg, arg),
-                               reply_markup=markup)
+                               "**{}** bed check\nCheck if **{}** bed is loaded; if not, load it before pressing _OK_. Press _Cancel_ to interrupt.".format(arg, arg),
+                               reply_markup=markup, parse_mode="Markdown")
         time.sleep(15)
-        if self._bot.next_step_backend.handlers.get(chat_id, [telebot.Handler(None, None, None)])[0].callback == handle_m291:
-            self._bot.delete_message(msg.chat.id, msg.message_id, 0.5)
-            self._bot.clear_step_handler_by_chat_id(chat_id)
-            requests.get(self._send_gcode_url + 'M292 P1')
-            self._bot.delete_message(snap.chat.id, snap.message_id, 0.5)
+        handlers = self._bot.next_step_backend.handlers.get(chat_id, [telebot.Handler(None, None, None)])
+        for h in handlers:
+            if h.callback == handle_m291 and t in h.args:
+                self._bot.delete_message(msg.chat.id, msg.message_id, 0.5)
+                self._bot.clear_step_handler_by_chat_id(chat_id)
+                requests.get(self._send_gcode_url + 'M292 P1')
+                self._bot.delete_message(snap.chat.id, snap.message_id, 0.5)
 
     _commands = {
         "check_bed": _check_bed
