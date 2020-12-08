@@ -97,10 +97,13 @@ def markup_from_list(elements, width, max_width=None, bottom_more=True, one_time
     return markup
 
 def get_homed_axes():
-    requests.get(send_gcode + "M409 K\"move.axes[].homed\"")
-    json_reply = get_duet_json_reply(2, 0.1)
-    homed = json_reply.get('result', [False, False, False])
-    return tuple(homed)
+    try:
+        json_reply = requests.get(send_request_status).json()
+        homed = json_reply['coords']['axesHomed']
+        return homed[0]==1, homed[1]==1, homed[2]==1
+    except Exception as exc:
+        print("Could not fetch status (get_homed_axes): ", str(exc))
+        return False, False, False
 
 def home_axes(message, axes:tuple=None, homed:tuple=None):
     if axes is None:
@@ -196,6 +199,7 @@ except Exception as e:
 
 send_gcode = "http://{}/rr_gcode?gcode=".format(duet_ip)
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
+send_request_status = "http://{}/rr_status?type=1".format(duet_ip)
 send_request_filelist = "http://{}/rr_filelist?dir=".format(duet_ip)
 send_request_macro = send_gcode + "M98 P\"{}\""
 send_request_reply = "http://{}/rr_reply".format(duet_ip)
@@ -609,7 +613,7 @@ class DuetPolling(threading.Thread):
         markup.row(telebot.types.KeyboardButton('OK'), telebot.types.KeyboardButton('Cancel'))
         self._bot.register_next_step_handler_by_chat_id(chat_id, handle_m291)
         msg = self._bot.send_message(chat_id,
-                               "{} bed check\nCheck if {} bed is loaded; if not, load it before pressing OK. Press Cancel to interrupt.".format(arg, arg),
+                               "**{}** bed check\nCheck if **{}** bed is loaded; if not, load it before pressing OK. Press Cancel to interrupt.".format(arg, arg),
                                reply_markup=markup)
         time.sleep(15)
         if self._bot.next_step_backend.handlers.get(chat_id, [telebot.Handler(None, None, None)])[0].callback == handle_m291:
