@@ -19,6 +19,7 @@ import colorsys
 
 import authentication as auth
 from duet_status import DuetStatus
+from plot_graph import parse_heightmap_csv, heightmap_to_png
 from connections_server import SocketServerLineProtocol
 
 TOKEN = ""
@@ -201,10 +202,12 @@ def gcode_error(message):
 pending_controller_message = {}
 
 conf_path = "/home/pi/Printy-McPrintface/Raspberry/.config/"
+download_path = "/home/pi/Printy-McPrintface/Raspberry/.downloads/"
 duet_ip_conf_path = conf_path + "duet_ip.conf"
 motion_ip_conf_path = conf_path + "motion_ip.conf"
 socket_port_conf_path = conf_path + "telegram-bot_socket_port.conf"
 motion_files_conf_path = conf_path + "motion_snap_path.conf"
+heightmap_path = download_path + "heightmap.csv"
 
 duet_ip = '192.168.0.3'
 try:
@@ -239,6 +242,7 @@ send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
 send_request_filelist = "http://{}/rr_filelist?dir=".format(duet_ip)
 send_request_macro = send_gcode + "M98 P\"{}\""
 send_request_reply = "http://{}/rr_reply".format(duet_ip)
+send_request_download = "http://{}/rr_download?name=".format(duet_ip)
 
 controller_variables = {
     'lights': ('*Lights', [0, 1]),
@@ -386,6 +390,22 @@ def send_snapshot(message):
     except Exception as exc:
         print(exc, flush=True)
         bot.reply_to(message, "Unable to send snapshot: " + str(exc))
+
+@bot.message_handler(commands=['heightmap'])
+def send_heightmap(message):
+    try:
+        r = requests.get(send_request_download+'/sys/heightmap.csv')
+        time.sleep(.1)
+        open(heightmap_path, 'w').write(r.text)
+        d = parse_heightmap_csv(heightmap_path)
+        heightmap_png_path = heightmap_to_png(download_path, d['x'], d['y'], d['z'], x_bounds=(0, 250), y_bounds=(0, 210), z_bounds=(-0.25, 0.25),
+                                              azim=-105, elev=45, is_trisurf=True, num_interp=2)
+        time.sleep(.1)
+        with open(heightmap_png_path, 'rb') as heightmap:
+            bot.send_photo(message.chat.id, heightmap)
+    except Exception as exc:
+        print(exc, flush=True)
+        bot.reply_to(message, "Unable to send heightmap: " + str(exc))
 
 def send_snapshot_by_chat_id(chat_id):
     if not auth.authentication(chat_id):
@@ -598,6 +618,7 @@ def send_help(message):
                     "/login - Authenticate your Telegram account\n" +
                     "/logout - Unregister your Telegram account\n" +
                     "/snap - Request live snapshot of the printer\n" +
+                    "/heightmap - Request current bed heightmap\n"
                     "/update - Pull changes and update software\n" +
                     "#xxxxxx - Set led color to the given hex color\n" +
                     "#xxxxxx chamber - Set chamber led color\n" +
