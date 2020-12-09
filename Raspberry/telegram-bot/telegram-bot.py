@@ -13,10 +13,12 @@ import telebot
 import threading
 import _thread
 import json
+import re
 
 import colorsys
 
 import authentication as auth
+from duet_status import DuetStatus
 from connections_server import SocketServerLineProtocol
 
 TOKEN = ""
@@ -62,15 +64,19 @@ def get_duet_json_reply(num_replies:int, sleep_time=0.1):
 
 def get_next_step(chat_id):
     with _next_step_lock:
-        return next_step.get(chat_id, "")
+        return next_step.get(chat_id, ("", ))[0]
 
-def set_next_step(chat_id, func_name):
+def get_args(chat_id):
     with _next_step_lock:
-        next_step[chat_id] = func_name
+        return next_step.get(chat_id, ("", ()))[1]
+
+def set_next_step(chat_id, func_name, *args):
+    with _next_step_lock:
+        next_step[chat_id] = (func_name, args)
 
 def reset_if_next_step(chat_id, curr_func_name):
     with _next_step_lock:
-        if next_step.get(chat_id, "") == curr_func_name:
+        if next_step.get(chat_id, ("", ))[0] == curr_func_name:
             del next_step[chat_id]
 
 def markup_from_list(elements, width, max_width=None, bottom_more=True, one_time_keyboard=False):
@@ -97,13 +103,8 @@ def markup_from_list(elements, width, max_width=None, bottom_more=True, one_time
     return markup
 
 def get_homed_axes():
-    try:
-        json_reply = requests.get(send_request_status).json()
-        homed = json_reply['coords']['axesHomed']
-        return homed[0]==1, homed[1]==1, homed[2]==1
-    except Exception as exc:
-        print("Could not fetch status (get_homed_axes): ", str(exc))
-        return False, False, False
+    homed = duet_status.get_homed()
+    return homed[0]==1, homed[1]==1, homed[2]==1
 
 def home_axes(message, axes:tuple=None, homed:tuple=None):
     if axes is None:
@@ -138,7 +139,35 @@ def home_axes(message, axes:tuple=None, homed:tuple=None):
         bot.send_message(message.chat.id, "Homing timed out", reply_to_message_id=message.message_id,
                          reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
 
-def relative_movement(message):
+def relative_movement(message, old_message=None):
+    reply = None
+    if old_message is None:
+        old_message = message
+    else:
+        reply = get_duet_reply(1)
+    command = old_message.text.split(' ')[0][1:]
+    axes = ('x' in command, 'y' in command, 'z' in command)
+    xyz = duet_status.get_new_xyz(wait=True)
+    homed = get_homed_axes()
+    home_axes(message, (axes[0] and not homed[0], axes[1] and not homed[1], axes[2] and not homed[2]), homed)
+    set_next_step(message.chat.id, 'get_relative_movement', old_message)
+    markup = telebot.types.ReplyKeyboardMarkup()
+    if axes[0]:
+        markup.row(telebot.types.KeyboardButton('X-50'), telebot.types.KeyboardButton('X-10'), telebot.types.KeyboardButton('X-1'),
+                   telebot.types.KeyboardButton('X-0.1'), telebot.types.KeyboardButton('X = {}'.format(xyz[0])), telebot.types.KeyboardButton('X+0.1'),
+                   telebot.types.KeyboardButton('X+1'), telebot.types.KeyboardButton('X+10'), telebot.types.KeyboardButton('X+50'))
+    if axes[1]:
+        markup.row(telebot.types.KeyboardButton('Y-50'), telebot.types.KeyboardButton('Y-10'), telebot.types.KeyboardButton('Y-1'),
+                   telebot.types.KeyboardButton('Y-0.1'), telebot.types.KeyboardButton('Y = {}'.format(xyz[1])), telebot.types.KeyboardButton('Y+0.1'),
+                   telebot.types.KeyboardButton('Y+1'), telebot.types.KeyboardButton('Y+10'), telebot.types.KeyboardButton('Y+50'))
+    if axes[2]:
+        markup.row(telebot.types.KeyboardButton('Z-25'), telebot.types.KeyboardButton('Z-5'), telebot.types.KeyboardButton('Z-0.5'),
+                   telebot.types.KeyboardButton('Z-0.05'), telebot.types.KeyboardButton('Z = {}'.format(xyz[2])), telebot.types.KeyboardButton('Z+0.05'),
+                   telebot.types.KeyboardButton('Z+0.5'), telebot.types.KeyboardButton('Z+5'), telebot.types.KeyboardButton('Z+25'))
+    markup.row(telebot.types.KeyboardButton('EXIT'))
+    bot.send_message(message.chat.id, ("Move axes", reply)[reply is not None], reply_markup=markup)
+
+def absolute_movement(message):
     command = message.text.split(' ')[0][1:]
     arguments = message.text.split(' ')[1:]
     axes = ('x' in command, 'y' in command, 'z' in command)
@@ -146,15 +175,23 @@ def relative_movement(message):
     home_axes(message, (axes[0] and not homed[0], axes[1] and not homed[1], axes[2] and not homed[2]), homed)
 
     if arguments == len(command):
-        i=0
-        if 'x' in command:
-            x = arguments[0]
-        if 'y' in command:
-            x = arguments[0]
+        i = 0
+        x, y, z = '', '', ''
+        if axes[0]:
+            x = arguments[i]
+            i += 1
+        if axes[1]:
+            y = arguments[i]
+            i += 1
+        if axes[2]:
+            z = arguments[i]
+            i += 1
 
-def absolute_movement(message):
-    pass
+        requests.get(send_gcode+"M120 G90 G1 {}{}{}F6000 M121".format(('', 'X{} '.format(x))[axes[0]],
+                                                                      ('', 'Y{} '.format(y))[axes[1]],
+                                                                      ('', 'Z{} '.format(z))[axes[2]]))
 
+        bot.send_message(message.chat.id, get_duet_reply(1), reply_to_message_id=message.message_id)
 def relative_extrusion(message):
     pass
 
@@ -199,7 +236,6 @@ except Exception as e:
 
 send_gcode = "http://{}/rr_gcode?gcode=".format(duet_ip)
 send_request_snapshot = "http://{}/0/action/snapshot".format(motion_ip)
-send_request_status = "http://{}/rr_status?type=1".format(duet_ip)
 send_request_filelist = "http://{}/rr_filelist?dir=".format(duet_ip)
 send_request_macro = send_gcode + "M98 P\"{}\""
 send_request_reply = "http://{}/rr_reply".format(duet_ip)
@@ -253,10 +289,10 @@ duet_gcodes = {
     'x': [relative_movement, absolute_movement],
     'y': [relative_movement, absolute_movement],
     'z': [relative_movement, absolute_movement],
-    'xy': [relative_movement, gcode_error, relative_movement],
-    'xz': [relative_movement, gcode_error, relative_movement],
-    'yz': [relative_movement, gcode_error, relative_movement],
-    'xyz': [relative_movement, gcode_error, gcode_error, relative_movement],
+    'xy': [relative_movement, gcode_error, absolute_movement],
+    'xz': [relative_movement, gcode_error, absolute_movement],
+    'yz': [relative_movement, gcode_error, absolute_movement],
+    'xyz': [relative_movement, gcode_error, gcode_error, absolute_movement],
     'e': [relative_extrusion, relative_extrusion]
 }
 
@@ -538,6 +574,24 @@ def handle_gcode(message):
     except Exception as exc:
         bot.reply_to(message, str(exc))
 
+@bot.message_handler(func=lambda message: get_next_step(message.chat.id)=='get_relative_movement')
+def get_relative_movement(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
+    if message.text == 'EXIT':
+        bot.send_message(message.chat.id, 'ok', reply_to_message_id=message.message_id, reply_markup=telebot.types.ReplyKeyboardRemove(selective=False))
+        reset_if_next_step(message.chat.id, 'get_relative_movement')
+
+    elif re.match('^[XYZ][+-]\d+(\.\d+)?$', string=message.text):
+        requests.get(send_gcode+"M120 G91 G1 {} F6000 G90 M121".format(message.text))
+        relative_movement(message, old_message=get_args(message.chat.id)[0])
+
+    elif re.match('^[XYZ] = -?\d+(\.\d+)?$', string=message.text):
+        home_axes(message, (message.text.startswith('X'), message.text.startswith('Y'), message.text.startswith('Z')))
+        relative_movement(message, old_message=get_args(message.chat.id)[0])
+
 @bot.message_handler(commands=['help'])
 def send_help(message):
     bot.send_message(message.chat.id,
@@ -696,6 +750,7 @@ class DuetPolling(threading.Thread):
         self._stop = True
 
 duet_polling = DuetPolling(bot, duet_ip, 0.25)
+duet_status = DuetStatus(duet_ip, 1.0)
 
 if __name__ == "__main__":
     print("Socket listening on 127.0.0.1:{}".format(socket_port))
