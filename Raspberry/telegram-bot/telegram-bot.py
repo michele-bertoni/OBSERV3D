@@ -794,8 +794,12 @@ class DuetPolling(threading.Thread):
                     replies.reverse()
                     for r in replies:
                         if r.startswith('/'):
-                            command = r.split(' ', 1)[0][1:]
-                            arg = r.split(' ', 1)[1]
+                            s = r.split(' ', 1)
+                            command = s[0][1:]
+                            if len(s)>1:
+                                arg = r.split(' ', 1)[1]
+                            else:
+                                arg = ''
                             with self._subscribers_lock:
                                 for s in self._subscribers.get(command, []):
                                     _thread.start_new_thread(self._commands[command], (self, s, arg))
