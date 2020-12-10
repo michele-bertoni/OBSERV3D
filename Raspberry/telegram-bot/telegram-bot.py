@@ -451,7 +451,7 @@ def send_heightmap(message, chat_id=None):
         print(exc)
 
 @bot.message_handler(commands=['heightmap_anim'])
-def send_heightmap(message):
+def send_heightmap_anim(message):
     if not auth.authentication(message.chat.id):
         bot.reply_to(message, "Authentication failed: /login")
         return
