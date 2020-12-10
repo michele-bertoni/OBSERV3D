@@ -401,6 +401,7 @@ def send_heightmap(message):
         open(heightmap_csv_path, 'w').write(r.text)
         while not path.exists(heightmap_png_path):
             time.sleep(.1)
+        time.sleep(1)
         with open(heightmap_png_path, 'rb') as heightmap:
             bot.send_photo(message.chat.id, heightmap)
     except Exception as exc:
