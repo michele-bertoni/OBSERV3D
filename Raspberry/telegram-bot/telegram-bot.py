@@ -133,7 +133,7 @@ def home_axes(message, axes:tuple=None, homed:tuple=None):
     time.sleep(1.9)
     homed = get_homed_axes()
     t = time.time()
-    while time.time()-t < 30.0 and ((axes[0] and not homed[0]) or (axes[1] and not homed[1]) or (axes[2] and not homed[2])):
+    while time.time()-t < 40.0 and ((axes[0] and not homed[0]) or (axes[1] and not homed[1]) or (axes[2] and not homed[2])):
         time.sleep(1.9)
         homed = get_homed_axes()
 
@@ -417,11 +417,12 @@ def send_heightmap(message, chat_id=None):
         return
 
     args_dict = {'mode': 'png'}
-    args = message.text.split(' ')[1:]
-    for a in args:
-        v = a.split('=')
-        if len(v) > 1:
-            args_dict[v[0]] = v[1]
+    if message is not None:
+        args = message.text.split(' ')[1:]
+        for a in args:
+            v = a.split('=')
+            if len(v) > 1:
+                args_dict[v[0]] = v[1]
     with open(heightmap_json_path, 'w') as fp:
         json.dump(args_dict, fp)
 
