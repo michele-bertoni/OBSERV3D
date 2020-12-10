@@ -23,6 +23,8 @@ import authentication as auth
 from connections_server import SocketServerLineProtocol
 from duet_status import DuetStatus
 
+start_time = time.time()
+
 TOKEN = ""
 try:
     with open('token.txt') as f:
@@ -209,7 +211,9 @@ motion_ip_conf_path = conf_path + "motion_ip.conf"
 socket_port_conf_path = conf_path + "telegram-bot_socket_port.conf"
 motion_files_conf_path = conf_path + "motion_snap_path.conf"
 heightmap_csv_path = download_path + "heightmap.csv"
+heightmap_json_path = download_path + "heightmap.json"
 heightmap_png_path = download_path + "heightmap.png"
+heightmap_mp4_path = download_path + "heightmap.mp4"
 
 duet_ip = '192.168.0.3'
 try:
@@ -306,6 +310,10 @@ sock = socket.create_server(('127.0.0.1', socket_port))
 conn = None
 
 bot = telebot.TeleBot(TOKEN)
+
+@bot.message_handler(func=lambda message: time.time()-message.date > 60 > time.time()-start_time)
+def handle_old_message(message):
+    bot.reply_to(message, "You sent a message while the bot was offline: if you still need to perform this operation, send the command again.")
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -408,12 +416,25 @@ def send_heightmap(message, chat_id=None):
             bot.reply_to(message, "Authentication failed: /login")
         return
 
+    args_dict = {'mode': 'png'}
+    args = message.text.split(' ')[1:]
+    for a in args:
+        v = a.split('=')
+        if len(v) > 1:
+            args_dict[v[0]] = v[1]
+    with open(heightmap_json_path, 'w') as fp:
+        json.dump(args_dict, fp)
+
     try:
         r = requests.get(send_request_download+'/sys/heightmap.csv')
         time.sleep(.1)
         open(heightmap_csv_path, 'w').write(r.text)
-        while not path.exists(heightmap_png_path):
-            time.sleep(.1)
+        t=time.time()
+        while not path.exists(heightmap_png_path) and time.time()-t<=20:
+            time.sleep(.5)
+        if not path.exists(heightmap_png_path):
+            bot.reply_to(message, "Unable to send heightmap: operation timed out")
+            return
         time.sleep(1)
         with open(heightmap_png_path, 'rb') as heightmap:
             bot.send_photo(chat_id, heightmap)
@@ -426,6 +447,43 @@ def send_heightmap(message, chat_id=None):
     time.sleep(5)
     try:
         os.remove(heightmap_png_path)
+    except Exception as exc:
+        print(exc)
+
+@bot.message_handler(commands=['heightmap_anim'])
+def send_heightmap(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
+    args_dict = {'mode': 'mp4'}
+    args = message.text.split(' ')[1:]
+    for a in args:
+        v = a.split('=')
+        if len(v) > 1:
+            args_dict[v[0]] = v[1]
+    with open(heightmap_json_path, 'w') as fp:
+        json.dump(args_dict, fp)
+
+    try:
+        r = requests.get(send_request_download+'/sys/heightmap.csv')
+        time.sleep(.1)
+        open(heightmap_csv_path, 'w').write(r.text)
+        t = time.time()
+        while not path.exists(heightmap_mp4_path) and time.time()-t<60:
+            time.sleep(.5)
+        if not path.exists(heightmap_mp4_path):
+            bot.reply_to(message, "Unable to send heightmap animation: operation timed out")
+            return
+        time.sleep(1)
+        with open(heightmap_mp4_path, 'rb') as heightmap:
+            bot.send_animation(message.chat.id, heightmap)
+    except Exception as exc:
+        print(exc, flush=True)
+        bot.reply_to(message, "Unable to send heightmap animation: " + str(exc))
+    time.sleep(30)
+    try:
+        os.remove(heightmap_mp4_path)
     except Exception as exc:
         print(exc)
 
