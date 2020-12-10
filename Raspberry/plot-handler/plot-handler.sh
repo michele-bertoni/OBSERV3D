@@ -25,9 +25,6 @@ exec > >(tee /home/pi/Printy-McPrintface/Raspberry/plot-handler/log.txt)
 # Redirect stderr to stdout
 exec 2>&1
 
-# Verbose mode
-set -x
-
 # Reset possibly leftover locks
 rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.csv
 rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.png
@@ -36,6 +33,7 @@ rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.png
 cd /home/pi/Printy-McPrintface/Raspberry/plot-handler/
 
 # Main loop
+echo "Wait for heightmap.csv"
 while true; do
 	if [[ -f "/home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.csv" ]]; then
 		echo "heightmap.csv found: running Python code..."
@@ -44,6 +42,7 @@ while true; do
 
         echo "heightmap.png generated, removing heightmap.csv"
 		rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.csv
+		echo "Wait for heightmap.csv"
 	fi
 	sleep 1
 done
