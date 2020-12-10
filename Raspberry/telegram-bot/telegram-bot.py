@@ -394,7 +394,20 @@ def send_snapshot(message):
         bot.reply_to(message, "Unable to send snapshot: " + str(exc))
 
 @bot.message_handler(commands=['heightmap'])
-def send_heightmap(message):
+def send_heightmap(message, chat_id=None):
+    if message is None and chat_id is None:
+        raise ValueError("Both message and chat_id are None")
+
+    if chat_id is None:
+        chat_id = message.chat.id
+
+    if not auth.authentication(chat_id):
+        if message is None:
+            bot.send_message(chat_id, "Authentication failed: /login")
+        else:
+            bot.reply_to(message, "Authentication failed: /login")
+        return
+
     try:
         r = requests.get(send_request_download+'/sys/heightmap.csv')
         time.sleep(.1)
@@ -403,16 +416,32 @@ def send_heightmap(message):
             time.sleep(.1)
         time.sleep(1)
         with open(heightmap_png_path, 'rb') as heightmap:
-            bot.send_photo(message.chat.id, heightmap)
+            bot.send_photo(chat_id, heightmap)
     except Exception as exc:
         print(exc, flush=True)
-        bot.reply_to(message, "Unable to send heightmap: " + str(exc))
+        if message is None:
+            bot.send_message(chat_id, "Unable to send heightmap: " + str(exc))
+        else:
+            bot.reply_to(message, "Unable to send heightmap: " + str(exc))
     time.sleep(5)
     try:
         os.remove(heightmap_png_path)
     except Exception as exc:
         print(exc)
 
+@bot.message_handler(commands=['meshbedprobe'])
+def handle_mesh_bed_probe(message):
+    if not auth.authentication(message.chat.id):
+        bot.reply_to(message, "Authentication failed: /login")
+        return
+
+    homed_axes = get_homed_axes()
+    if homed_axes != (True, True, True):
+        home_axes(message, (True, True, True), homed_axes)
+
+    duet_polling.subscribe(message.chat.id, 'send_heightmap')
+    requests.get(send_gcode+"G29 M400 M118 P3 S\"/send_heightmap\" G1 X88.5 Y105 Z5 F6000")
+    bot.reply_to(message, get_duet_reply(1))
 
 def send_snapshot_by_chat_id(chat_id):
     if not auth.authentication(chat_id):
@@ -707,8 +736,12 @@ class DuetPolling(threading.Thread):
                 requests.get(self._send_gcode_url + 'M292 P1')
                 self._bot.delete_message(snap.chat.id, snap.message_id, 0.5)
 
+    def _send_heightmap(self, chat_id, arg: str):
+        send_heightmap(None, chat_id)
+
     _commands = {
-        "check_bed": _check_bed
+        "check_bed": _check_bed,
+        "send_heightmap": _send_heightmap
     }
 
     _subscribers_lock = threading.Lock()
