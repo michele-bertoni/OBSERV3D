@@ -311,7 +311,7 @@ conn = None
 
 bot = telebot.TeleBot(TOKEN)
 
-@bot.message_handler(func=lambda message: time.time()-start_time<5)
+@bot.message_handler(func=lambda message: time.time()-start_time<3)
 def handle_old_message(message):
     bot.reply_to(message, "You sent a message while the bot was offline: if you still need to perform this operation, send the command again.")
 
