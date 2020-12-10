@@ -406,12 +406,12 @@ def send_heightmap(message):
     except Exception as exc:
         print(exc, flush=True)
         bot.reply_to(message, "Unable to send heightmap: " + str(exc))
-
+    time.sleep(5)
     try:
         os.remove(heightmap_png_path)
     except Exception as exc:
         print(exc)
-        
+
 
 def send_snapshot_by_chat_id(chat_id):
     if not auth.authentication(chat_id):
