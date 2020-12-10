@@ -83,6 +83,7 @@ def heightmap_to_png(path:str, x:list, y:list, z:list, x_bounds=(0, 250), y_boun
     import matplotlib.pyplot as plt
     from matplotlib.ticker import LinearLocator
     import numpy as np
+    from mpl_toolkits.mplot3d import Axes3D
 
     if not path.endswith('/'):
         path+='/'
