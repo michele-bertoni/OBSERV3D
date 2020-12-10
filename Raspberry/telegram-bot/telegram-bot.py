@@ -401,17 +401,18 @@ def send_heightmap(message):
         open(heightmap_csv_path, 'w').write(r.text)
         while not path.exists(heightmap_png_path):
             time.sleep(.1)
+        time.sleep(1)
         with open(heightmap_png_path, 'rb') as heightmap:
             bot.send_photo(message.chat.id, heightmap)
     except Exception as exc:
         print(exc, flush=True)
         bot.reply_to(message, "Unable to send heightmap: " + str(exc))
-
+    time.sleep(5)
     try:
         os.remove(heightmap_png_path)
     except Exception as exc:
         print(exc)
-        
+
 
 def send_snapshot_by_chat_id(chat_id):
     if not auth.authentication(chat_id):
