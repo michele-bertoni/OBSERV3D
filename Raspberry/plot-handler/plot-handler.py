@@ -142,6 +142,7 @@ def heightmap_to_png(path:str, x:list, y:list, z:list, x_bounds=(0, 250), y_boun
 
 
 if __name__ == '__main__':
-    d = parse_heightmap_csv("heightmap.csv")
-    heightmap_to_png("./", d['x'], d['y'], d['z'], x_bounds=(0,250), y_bounds=(0,210), z_bounds=(-0.25, 0.25),
+    path = '/home/pi/Printy-McPrintface/Raspberry/.downloads/'
+    d = parse_heightmap_csv(path+"heightmap.csv")
+    heightmap_to_png(path, d['x'], d['y'], d['z'], x_bounds=(0,250), y_bounds=(0,210), z_bounds=(-0.25, 0.25),
                      azim=-90, elev=90, is_trisurf=True, num_interp=2)

@@ -6,21 +6,22 @@
 # or on the website of CreativeCommons (https://creativecommons.org/licenses/by-nc-sa/3.0/)       #
 ###################################################################################################
 
-import time
-import socket
-import requests
-import telebot
-import threading
 import _thread
+import colorsys
 import json
 import re
+import socket
+import threading
+import time
+import os
+import os.path as path
 
-import colorsys
+import requests
+import telebot
 
 import authentication as auth
-from duet_status import DuetStatus
-from plot_graph import parse_heightmap_csv, heightmap_to_png
 from connections_server import SocketServerLineProtocol
+from duet_status import DuetStatus
 
 TOKEN = ""
 try:
@@ -207,7 +208,8 @@ duet_ip_conf_path = conf_path + "duet_ip.conf"
 motion_ip_conf_path = conf_path + "motion_ip.conf"
 socket_port_conf_path = conf_path + "telegram-bot_socket_port.conf"
 motion_files_conf_path = conf_path + "motion_snap_path.conf"
-heightmap_path = download_path + "heightmap.csv"
+heightmap_csv_path = download_path + "heightmap.csv"
+heightmap_png_path = download_path + "heightmap.png"
 
 duet_ip = '192.168.0.3'
 try:
@@ -396,16 +398,20 @@ def send_heightmap(message):
     try:
         r = requests.get(send_request_download+'/sys/heightmap.csv')
         time.sleep(.1)
-        open(heightmap_path, 'w').write(r.text)
-        d = parse_heightmap_csv(heightmap_path)
-        heightmap_png_path = heightmap_to_png(download_path, d['x'], d['y'], d['z'], x_bounds=(0, 250), y_bounds=(0, 210), z_bounds=(-0.25, 0.25),
-                                              azim=-105, elev=45, is_trisurf=True, num_interp=2)
-        time.sleep(.1)
+        open(heightmap_csv_path, 'w').write(r.text)
+        while not path.exists(heightmap_png_path):
+            time.sleep(.1)
         with open(heightmap_png_path, 'rb') as heightmap:
             bot.send_photo(message.chat.id, heightmap)
     except Exception as exc:
         print(exc, flush=True)
         bot.reply_to(message, "Unable to send heightmap: " + str(exc))
+
+    try:
+        os.remove(heightmap_png_path)
+    except Exception as exc:
+        print(exc)
+        
 
 def send_snapshot_by_chat_id(chat_id):
     if not auth.authentication(chat_id):
