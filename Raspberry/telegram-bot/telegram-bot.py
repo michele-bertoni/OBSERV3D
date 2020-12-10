@@ -23,7 +23,7 @@ import authentication as auth
 from connections_server import SocketServerLineProtocol
 from duet_status import DuetStatus
 
-start_time = time.time()
+start_time = 0
 
 TOKEN = ""
 try:
@@ -311,7 +311,7 @@ conn = None
 
 bot = telebot.TeleBot(TOKEN)
 
-@bot.message_handler(func=lambda message: time.time()-message.date > 60 > time.time()-start_time)
+@bot.message_handler(func=lambda message: time.time()-start_time<20)
 def handle_old_message(message):
     bot.reply_to(message, "You sent a message while the bot was offline: if you still need to perform this operation, send the command again.")
 
@@ -881,6 +881,7 @@ if __name__ == "__main__":
     conn = SocketServerLineProtocol(sock.accept()[0])
     print("Printy McPrintface Telegram Bot listening...", flush=True)
     duet_polling.start()
+    start_time = time.time()
     bot.polling()
     while True:
         time.sleep(1)
