@@ -203,9 +203,13 @@ def heightmap_to_mp4():
 
 
 if __name__ == '__main__':
+    try:
+        if p['mode'] == 'png':
+            print("Exporting png", flush=True)
+            heightmap_to_png()
 
-    if p['mode'] == 'png':
-        heightmap_to_png()
-
-    elif p['mode'] == 'mp4':
-        heightmap_to_mp4()
+        elif p['mode'] == 'mp4':
+            print("Exporting mp4", flush=True)
+            heightmap_to_mp4()
+    except Exception as exc:
+        print(exc, flush=True)
