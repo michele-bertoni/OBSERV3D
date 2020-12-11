@@ -180,6 +180,7 @@ def animate(i):
     else:
         elev = azim_elev['e3'][i]
 
+    print(elev, azim, flush=True)
     ax.view_init(elev=elev, azim=azim)
     return fig,
 
