@@ -474,6 +474,8 @@ def send_heightmap_anim(message):
         bot.reply_to(message, "Authentication failed: /login")
         return
 
+    bot.reply_to(message, 'Exporting heightmap animation: this operation might last up to 10 minutes')
+
     args_dict = {'mode': 'mp4'}
     args = message.text.split(' ')[1:]
     for a in args:
@@ -483,27 +485,29 @@ def send_heightmap_anim(message):
     with open(heightmap_json_path, 'w') as fp:
         json.dump(args_dict, fp)
 
+    if path.exists(heightmap_mp4_path):
+        try:
+            os.remove(heightmap_mp4_path)
+        except Exception as exc:
+            print(exc)
+
     try:
         r = requests.get(send_request_download+'/sys/heightmap.csv')
         time.sleep(.1)
         open(heightmap_csv_path, 'w').write(r.text)
         t = time.time()
-        while not path.exists(heightmap_mp4_path) and time.time()-t<60:
+        while (not path.exists(heightmap_mp4_path) or path.exists(heightmap_csv_path)) and time.time()-t<600:
             time.sleep(.5)
-        if not path.exists(heightmap_mp4_path):
+        if not path.exists(heightmap_mp4_path) or path.exists(heightmap_csv_path):
             bot.reply_to(message, "Unable to send heightmap animation: operation timed out")
             return
-        time.sleep(5)
+        time.sleep(1)
         with open(heightmap_mp4_path, 'rb') as heightmap:
             bot.send_animation(message.chat.id, heightmap)
     except Exception as exc:
         print(exc, flush=True)
         bot.reply_to(message, "Unable to send heightmap animation: " + str(exc))
-    time.sleep(30)
-    # try:
-        # os.remove(heightmap_mp4_path)
-    # except Exception as exc:
-        # print(exc)
+
 
 @bot.message_handler(commands=['meshbedprobe'])
 def handle_mesh_bed_probe(message):
