@@ -196,9 +196,10 @@ def heightmap_to_mp4():
     azim_elev['e2'] = elev + (90-elev)*np.sin(2*np.pi/num_frames*(frame-num_frames/4))
     azim_elev['e3'] = elev + (90-elev)/2*np.sin(2*np.pi/num_frames*frame)
 
+    heightmap_to_plot()
+
     # Animate
-    anim = animation.FuncAnimation(fig, animate, init_func=heightmap_to_plot,
-                                   frames=num_frames, interval=20, blit=True)
+    anim = animation.FuncAnimation(fig, animate, frames=num_frames, interval=20, blit=True)
     # Save
     anim.save(downloads_path+'heightmap.mp4', fps=fps, extra_args=['-vcodec', 'libx264'])
 
@@ -212,5 +213,6 @@ if __name__ == '__main__':
         elif p['mode'] == 'mp4':
             print("Exporting mp4", flush=True)
             heightmap_to_mp4()
+
     except Exception as exc:
         print(exc, flush=True)
