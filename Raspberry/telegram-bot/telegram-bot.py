@@ -493,17 +493,17 @@ def send_heightmap_anim(message):
         if not path.exists(heightmap_mp4_path):
             bot.reply_to(message, "Unable to send heightmap animation: operation timed out")
             return
-        time.sleep(1)
+        time.sleep(5)
         with open(heightmap_mp4_path, 'rb') as heightmap:
             bot.send_animation(message.chat.id, heightmap)
     except Exception as exc:
         print(exc, flush=True)
         bot.reply_to(message, "Unable to send heightmap animation: " + str(exc))
     time.sleep(30)
-    try:
-        os.remove(heightmap_mp4_path)
-    except Exception as exc:
-        print(exc)
+    # try:
+        # os.remove(heightmap_mp4_path)
+    # except Exception as exc:
+        # print(exc)
 
 @bot.message_handler(commands=['meshbedprobe'])
 def handle_mesh_bed_probe(message):
