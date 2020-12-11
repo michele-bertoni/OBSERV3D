@@ -28,6 +28,8 @@ exec 2>&1
 # Reset possibly leftover locks
 rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.csv
 rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.png
+rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.mp4
+rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.json
 
 # Move to source directory
 cd /home/pi/Printy-McPrintface/Raspberry/plot-handler/
@@ -40,9 +42,11 @@ while true; do
 		# Run Python code
 		python3 /home/pi/Printy-McPrintface/Raspberry/plot-handler/plot-handler.py
 
-        echo "heightmap.png generated, removing heightmap.csv"
+        echo "Heightmap plot generated, removing heightmap.csv"
 		rm /home/pi/Printy-McPrintface/Raspberry/.downloads/heightmap.csv
+
 		echo "Wait for heightmap.csv"
+	else
+	    sleep 1
 	fi
-	sleep 1
 done

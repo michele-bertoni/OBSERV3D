@@ -66,6 +66,23 @@ def get_duet_json_reply(num_replies:int, sleep_time=0.1):
                 pass
     return json.loads('{}')
 
+def parse_argument(arg:str):
+    arg.replace(' ', '')
+    values = arg.split(',')
+    if len(values) == 1:
+        v = values[0]
+        if re.match('-?\d+', v):
+            return int(v)
+        if re.match('-?\d*(\.\d+)', v):
+            return float(v)
+        if v.lower() == 'false':
+            return False
+        if v.lower() == 'true':
+            return True
+        return v
+    return [parse_argument(v) for v in values]
+
+
 def get_next_step(chat_id):
     with _next_step_lock:
         return next_step.get(chat_id, ("", ))[0]
@@ -422,7 +439,7 @@ def send_heightmap(message, chat_id=None):
         for a in args:
             v = a.split('=')
             if len(v) > 1:
-                args_dict[v[0]] = v[1]
+                args_dict[v[0]] = parse_argument(v[1])
     with open(heightmap_json_path, 'w') as fp:
         json.dump(args_dict, fp)
 
@@ -462,7 +479,7 @@ def send_heightmap_anim(message):
     for a in args:
         v = a.split('=')
         if len(v) > 1:
-            args_dict[v[0]] = v[1]
+            args_dict[v[0]] = parse_argument(v[1])
     with open(heightmap_json_path, 'w') as fp:
         json.dump(args_dict, fp)
 
