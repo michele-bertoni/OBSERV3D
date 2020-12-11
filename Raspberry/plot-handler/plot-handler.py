@@ -186,15 +186,15 @@ def animate(i):
 
 
 def heightmap_to_mp4():
-    azim, azim_d, elev = p.get('azim', -105), max(min(180, p.get('azim_d', 45)), -180), max(min(90, p.get('elev', 45)), -30)
+    azim, azim_d, elev = p.get('azim', -90), max(min(180, p.get('azim_d', 45)), -180), max(min(90, p.get('elev', 45)), -30)
     fps, duration = p.get('fps', 30), p.get('duration', 6)
     num_frames = fps * duration
 
     frame = np.arange(0, num_frames)
     azim_elev['a'] = azim - azim_d*np.sin(2*np.pi/num_frames*frame)
-    azim_elev['e1'] = elev - (90-elev)/2*np.sin(2*np.pi/num_frames*frame)
+    azim_elev['e1'] = elev - (90-elev)/2*np.sin(4*np.pi/num_frames*frame)
     azim_elev['e2'] = elev + (90-elev)*np.sin(2*np.pi/num_frames*(frame-num_frames/4))
-    azim_elev['e3'] = elev + (90-elev)/2*np.sin(2*np.pi/num_frames*frame)
+    azim_elev['e3'] = elev + (90-elev)/2*np.sin(4*np.pi/num_frames*frame)
 
     heightmap_to_plot()
 
