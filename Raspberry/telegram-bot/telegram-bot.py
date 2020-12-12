@@ -509,7 +509,7 @@ def send_heightmap_anim(message):
         bot.reply_to(message, "Unable to send heightmap animation: " + str(exc))
 
 
-@bot.message_handler(commands=['meshbedprobe'])
+@bot.message_handler(commands=['bedprobe'])
 def handle_mesh_bed_probe(message):
     if not auth.authentication(message.chat.id):
         bot.reply_to(message, "Authentication failed: /login")
