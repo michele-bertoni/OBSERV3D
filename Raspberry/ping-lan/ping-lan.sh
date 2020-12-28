@@ -25,8 +25,9 @@ exec > >(tee /home/pi/Printy-McPrintface/Raspberry/ping-lan/log.txt)
 # Redirect stderr to stdout
 exec 2>&1
 
-# Enable eth0 interface
+# Enable eth0 interface and assign another ip for pinging extender
 sudo ifconfig eth0 up
+sudo ifconfig eth0:1 192.168.8.2/24
 
 # Print date and time
 date +"Date : %d/%m/%Y Time : %H.%M.%S"
