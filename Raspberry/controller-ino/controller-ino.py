@@ -39,16 +39,16 @@ REQUEST_URL = "http://{}/rr_status?type=".format(DUET_HOST)
 SERIAL_PORT = "/dev/ttyUSB0"
 BAUDRATE = 2400
 
-serMessFromStatus = {'C':-1,
-                     'I':128,
-                     'B':-1,
-                     'P':.1,
-                     'D':-1,
-                     'S':-1,
-                     'R':-1,
-                     'H':-1,
-                     'F':136,
-                     'T':-1
+serMessFromStatus = {'C': -1,
+                     'I': 128,
+                     'B': -1,
+                     'P': 128,
+                     'D': -1,
+                     'S': -1,
+                     'R': -1,
+                     'H': -1,
+                     'F': 136,
+                     'T': -1
                      }
 
 if __name__ == "__main__":
@@ -61,15 +61,15 @@ if __name__ == "__main__":
     ]
     statusType = 2
 
-    x=0
-    y=0
-    z=0
-    te=0
-    tc=0
-    tb=0
-    dte=0
-    dtc=0
-    dtb=0
+    x = 0
+    y = 0
+    z = 0
+    te = 0
+    tc = 0
+    tb = 0
+    dte = 0
+    dtc = 0
+    dtb = 0
 
     isDisconnected = False
 
@@ -90,13 +90,13 @@ if __name__ == "__main__":
                         if len(response) <= 0 and conn.host_type=='TELEBOT':
                             response = 'ok'
                         else:
-                            response = response[:len(response)-2]
+                            response = response[:-2]
                         conn.queue_message(response)
 
                 response = requests.get(REQUEST_URL+str(statusType)).json()
-                #TODO: handle status
+#               TODO: handle status
                 status = response['status']
-                if status == 'I':
+                if status == 'I' or status == 'P':
                     ser.write(serMessFromStatus[status].to_bytes(1, "big"))
                     pass
                 elif status == 'P':

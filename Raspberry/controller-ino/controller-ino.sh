@@ -32,7 +32,7 @@ set -x
 rm /home/pi/Printy-McPrintface/Raspberry/controller-ino/.serialOpen
 
 # Move to source directory
-cd /home/pi/Printy-McPrintface/Raspberry/controller-ino/
+cd /home/pi/Printy-McPrintface/Raspberry/controller-ino/ || exit
 
 # Wait 10 second for net to be established
 sleep 10
